@@ -10,6 +10,7 @@ import {
 import { api } from "../convex/_generated/api";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
+import { Button } from "./components/ui/button";
 
 export default function App() {
   return (
@@ -80,12 +81,9 @@ function SignInForm() {
           name="password"
           placeholder="Password"
         />
-        <button
-          className="bg-dark dark:bg-light text-light dark:text-dark rounded-md"
-          type="submit"
-        >
+        <Button className="rounded-md" type="submit">
           {flow === "signIn" ? "Sign in" : "Sign up"}
-        </button>
+        </Button>
         <div className="flex flex-row gap-2">
           <span>
             {flow === "signIn"
