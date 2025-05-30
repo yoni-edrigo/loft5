@@ -9,7 +9,6 @@ import { useBookingStore } from "@/store/booking-store";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import BaseCalendar from "@/components/base-calendar";
 import CalendarLegend from "@/components/calendar-legend";
 import { TimeSlot, AvailabilitySlot } from "@/lib/types";
@@ -193,22 +192,7 @@ export default function BookingCalendar() {
                     <div className="font-medium">
                       {slot.slot === "afternoon" ? "צהריים" : "ערב"}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {TIME_SLOT_LABELS[slot.slot]}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {slot.slot === "afternoon" && (
-                      <Badge variant="secondary" className="text-xs">
-                        עד 25 איש
-                      </Badge>
-                    )}
-                    {slot.slot === "evening" && (
-                      <Badge variant="secondary" className="text-xs">
-                        ללא הגבלה
-                      </Badge>
-                    )}
+                    <div className="text-sm">{TIME_SLOT_LABELS[slot.slot]}</div>
                   </div>
                 </Button>
               ))}

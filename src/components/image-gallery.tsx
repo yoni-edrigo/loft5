@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useInView } from "react-intersection-observer";
 
 const GALLERY_IMAGES = [
@@ -105,6 +105,9 @@ export default function ImageGallery() {
         onOpenChange={() => setSelectedImage(null)}
       >
         <DialogContent className="max-w-4xl p-0">
+          <span className="sr-only">
+            <DialogTitle>תמונה מוגדלת</DialogTitle>
+          </span>
           {selectedImage && (
             <motion.img
               initial={{ opacity: 0, scale: 0.9 }}
