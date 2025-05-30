@@ -18,6 +18,9 @@ export default defineSchema({
     extraHours: v.optional(v.number()), // For evening events
     includesKaraoke: v.boolean(),
     includesPhotographer: v.boolean(),
+    includesFood: v.boolean(),
+    includesDrinks: v.boolean(),
+    includesSnacks: v.boolean(),
     totalPrice: v.number(),
     createdAt: v.number(),
   }),

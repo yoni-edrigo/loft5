@@ -3,8 +3,23 @@ import { mutation } from "./_generated/server";
 export const seedDatabase = mutation({
   args: {},
   handler: async (ctx) => {
-    // Clear existing data (optional - remove in production)
-    // await ctx.db.delete(await ctx.db.query("pricing").first());
+    // Delete all existing records from all tables
+    const pricingRecords = await ctx.db.query("pricing").collect();
+    for (const record of pricingRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    const availabilityRecords = await ctx.db.query("availability").collect();
+    for (const record of availabilityRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    const bookingRecords = await ctx.db.query("bookings").collect();
+    for (const record of bookingRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    console.log("Cleared existing data from all tables");
 
     // 1. Insert pricing structure
     await ctx.db.insert("pricing", {
@@ -70,7 +85,10 @@ export const seedDatabase = mutation({
         extraHours: 1,
         includesKaraoke: false,
         includesPhotographer: true,
-        totalPrice: 12525, // (35 × 270) + (35 × 1 × 35) + 1500
+        includesFood: true,
+        includesDrinks: true,
+        includesSnacks: true,
+        totalPrice: 17675, // (35 × 100 base) + (35 × 70 food) + (35 × 70 drinks) + (35 × 30 snacks) + (35 × 1 × 35 extra hour) + 1500 photographer
         createdAt: Date.now(),
       },
       {
@@ -83,7 +101,10 @@ export const seedDatabase = mutation({
         extraHours: 0,
         includesKaraoke: true,
         includesPhotographer: false,
-        totalPrice: 1500, // Afternoon with karaoke
+        includesFood: true,
+        includesDrinks: false,
+        includesSnacks: true,
+        totalPrice: 3500, // 1500 (afternoon with karaoke) + (20 × 70 food) + (20 × 30 snacks)
         createdAt: Date.now(),
       },
       {
@@ -96,7 +117,10 @@ export const seedDatabase = mutation({
         extraHours: 0,
         includesKaraoke: false,
         includesPhotographer: false,
-        totalPrice: 4050, // (15 × 270), meets minimum 1200
+        includesFood: false,
+        includesDrinks: true,
+        includesSnacks: false,
+        totalPrice: 4050, // (15 × 100 base) + (15 × 70 drinks), meets minimum 1200
         createdAt: Date.now(),
       },
       {
@@ -109,7 +133,10 @@ export const seedDatabase = mutation({
         extraHours: 0,
         includesKaraoke: false,
         includesPhotographer: true,
-        totalPrice: 2200, // 700 + 1500 photographer
+        includesFood: true,
+        includesDrinks: true,
+        includesSnacks: false,
+        totalPrice: 4180, // 700 (afternoon base) + 1500 (photographer) + (12 × 70 food) + (12 × 70 drinks)
         createdAt: Date.now(),
       },
     ];

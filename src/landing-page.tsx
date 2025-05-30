@@ -6,10 +6,12 @@ import { Toaster } from "@/components/ui/sonner";
 import FloatingOfficeButton from "@/components/floating-office-button";
 import Header from "./components/header";
 import Footer from "./components/footer";
+import { BookingStoreSync } from "@/components/booking-store-sync";
 
 export default function LandingPageV2() {
   return (
     <main className="flex min-h-screen flex-col">
+      <BookingStoreSync />
       <Header />
 
       <section

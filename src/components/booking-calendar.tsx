@@ -5,17 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isBefore, startOfDay } from "date-fns";
 import { he } from "date-fns/locale";
 import { Clock, X } from "lucide-react";
-import {
-  useBookingStore,
-  type TimeSlot,
-  type AvailabilitySlot,
-} from "@/store/booking-store";
+import { useBookingStore } from "@/store/booking-store";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import BaseCalendar from "@/components/base-calendar";
 import CalendarLegend from "@/components/calendar-legend";
+import { TimeSlot, AvailabilitySlot } from "@/lib/types";
 
 const TIME_SLOT_LABELS: Record<TimeSlot, string> = {
   afternoon: "צהריים (12:00-16:00)",

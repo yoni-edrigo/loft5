@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { useBookingStore, mockPricing } from "@/store/booking-store";
+import { useBookingStore } from "@/store/booking-store";
 import {
   Card,
   CardContent,
@@ -24,6 +24,7 @@ export default function BookingSummary() {
   const [showUserInfoDialog, setShowUserInfoDialog] = useState(false);
 
   const {
+    pricing,
     selectedDate,
     selectedTimeSlot,
     numberOfParticipants,
@@ -36,7 +37,7 @@ export default function BookingSummary() {
     calculateTotalPrice,
   } = useBookingStore();
 
-  if (!selectedDate || !selectedTimeSlot) {
+  if (!selectedDate || !selectedTimeSlot || !pricing) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -56,41 +57,37 @@ export default function BookingSummary() {
   const getBasePrice = () => {
     if (isAfternoon) {
       if (numberOfParticipants > 25) {
-        return mockPricing.afternoonLargeGroup;
+        return pricing.afternoonWithKaraoke; // Large groups require karaoke
       }
       return includesKaraoke
-        ? mockPricing.afternoonWithKaraoke
-        : mockPricing.afternoonBaseLoft;
+        ? pricing.afternoonWithKaraoke
+        : pricing.afternoonWithoutKaraoke;
     } else {
-      return mockPricing.loftPerPerson * numberOfParticipants;
+      return pricing.loftPerPerson * numberOfParticipants;
     }
   };
 
   const getFoodPrice = () => {
-    return includesFood ? mockPricing.foodPerPerson * numberOfParticipants : 0;
+    return includesFood ? pricing.foodPerPerson * numberOfParticipants : 0;
   };
 
   const getDrinksPrice = () => {
-    return includesDrinks
-      ? mockPricing.drinksPerPerson * numberOfParticipants
-      : 0;
+    return includesDrinks ? pricing.drinksPerPerson * numberOfParticipants : 0;
   };
 
   const getSnacksPrice = () => {
-    return includesSnacks
-      ? mockPricing.snacksPerPerson * numberOfParticipants
-      : 0;
+    return includesSnacks ? pricing.snacksPerPerson * numberOfParticipants : 0;
   };
 
   const getExtraHoursPrice = () => {
     if (isEvening && extraHours > 0) {
-      return extraHours * mockPricing.extraHourPerPerson * numberOfParticipants;
+      return extraHours * pricing.extraHourPerPerson * numberOfParticipants;
     }
     return 0;
   };
 
   const getPhotographerPrice = () => {
-    return includesPhotographer ? mockPricing.photographerPrice : 0;
+    return includesPhotographer ? pricing.photographerPrice : 0;
   };
 
   const basePrice = getBasePrice();
@@ -108,11 +105,8 @@ export default function BookingSummary() {
     snacksPrice +
     extraHoursPrice +
     photographerPrice;
-  const isMinimumPriceApplied = isAfternoon
-    ? totalPrice === mockPricing.minimumPriceAfternoon &&
-      totalPrice > calculatedPrice
-    : totalPrice === mockPricing.minimumPriceEvening &&
-      totalPrice > calculatedPrice;
+  const isMinimumPriceApplied =
+    totalPrice === pricing.minimumPrice && totalPrice > calculatedPrice;
 
   const handleContinue = () => {
     if (!selectedDate || !selectedTimeSlot) {
@@ -290,8 +284,8 @@ export default function BookingSummary() {
               <div className="text-xs mt-1 opacity-90">
                 (מחיר מינימום{" "}
                 {isAfternoon
-                  ? formatPrice(mockPricing.minimumPriceAfternoon)
-                  : formatPrice(mockPricing.minimumPriceEvening)}{" "}
+                  ? formatPrice(pricing.minimumPrice)
+                  : formatPrice(pricing.minimumPrice)}{" "}
                 ₪)
               </div>
             )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useBookingStore, mockPricing } from "@/store/booking-store";
+import { useBookingStore } from "@/store/booking-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -22,6 +22,7 @@ import { formatPrice } from "@/lib/utils";
 
 export default function BookingOptions() {
   const {
+    pricing,
     selectedTimeSlot,
     numberOfParticipants,
     extraHours,
@@ -39,7 +40,7 @@ export default function BookingOptions() {
     setIncludesSnacks,
   } = useBookingStore();
 
-  if (!selectedTimeSlot) {
+  if (!selectedTimeSlot || !pricing) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -138,9 +139,9 @@ export default function BookingOptions() {
                 <span className="font-medium">
                   {isAfternoon
                     ? isLargeAfternoonGroup
-                      ? `₪${formatPrice(mockPricing.afternoonLargeGroup)}`
-                      : `₪${formatPrice(mockPricing.afternoonBaseLoft)}`
-                    : `₪${formatPrice(mockPricing.loftPerPerson)} לאדם (חלל בלבד)`}
+                      ? `₪${formatPrice(pricing.afternoonWithKaraoke)}`
+                      : `₪${formatPrice(pricing.afternoonWithoutKaraoke)}`
+                    : `₪${formatPrice(pricing.loftPerPerson)} לאדם (חלל בלבד)`}
                 </span>
               </div>
             </div>
@@ -184,7 +185,7 @@ export default function BookingOptions() {
                   <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
                     <p className="text-sm text-blue-700 dark:text-blue-300">
                       תוספת של {extraHours} שעות: ₪
-                      {formatPrice(mockPricing.extraHourPerPerson)} לאדם לשעה
+                      {formatPrice(pricing.extraHourPerPerson)} לאדם לשעה
                     </p>
                   </div>
                 )}
@@ -211,7 +212,7 @@ export default function BookingOptions() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">
-                  ₪{formatPrice(mockPricing.foodPerPerson)} לאדם
+                  ₪{formatPrice(pricing.foodPerPerson)} לאדם
                 </span>
                 <Switch
                   checked={includesFood}
@@ -233,7 +234,7 @@ export default function BookingOptions() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">
-                  ₪{formatPrice(mockPricing.drinksPerPerson)} לאדם
+                  ₪{formatPrice(pricing.drinksPerPerson)} לאדם
                 </span>
                 <Switch
                   checked={includesDrinks}
@@ -255,7 +256,7 @@ export default function BookingOptions() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">
-                  ₪{formatPrice(mockPricing.snacksPerPerson)} לאדם
+                  ₪{formatPrice(pricing.snacksPerPerson)} לאדם
                 </span>
                 <Switch
                   checked={includesSnacks}
@@ -287,8 +288,8 @@ export default function BookingOptions() {
                   <span className="text-sm font-medium">
                     ₪
                     {formatPrice(
-                      mockPricing.afternoonWithKaraoke -
-                        mockPricing.afternoonBaseLoft,
+                      pricing.afternoonWithKaraoke -
+                        pricing.afternoonWithoutKaraoke,
                     )}
                   </span>
                   <Switch
@@ -312,7 +313,7 @@ export default function BookingOptions() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">
-                  ₪{formatPrice(mockPricing.photographerPrice)}
+                  ₪{formatPrice(pricing.photographerPrice)}
                 </span>
                 <Switch
                   checked={includesPhotographer}
