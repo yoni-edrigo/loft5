@@ -1,11 +1,15 @@
 "use client";
 
-import { Key, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isBefore, startOfDay } from "date-fns";
 import { he } from "date-fns/locale";
-import { X, Clock, Users } from "lucide-react";
-import { useBookingStore, type TimeSlot } from "@/store/booking-store";
+import { Clock, X } from "lucide-react";
+import {
+  useBookingStore,
+  type TimeSlot,
+  type AvailabilitySlot,
+} from "@/store/booking-store";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,11 +60,13 @@ export default function BookingCalendar() {
     });
   };
 
-  const handleTimeSlotSelect = (timeSlot: TimeSlot) => {
-    setSelectedTimeSlot(timeSlot);
+  const handleTimeSlotSelect = (slot: TimeSlot | null) => {
+    if (!slot) return;
+
+    setSelectedTimeSlot(slot);
 
     toast.success("שעות נבחרו", {
-      description: TIME_SLOT_LABELS[timeSlot],
+      description: TIME_SLOT_LABELS[slot],
     });
 
     // Close mobile sidebar after selection
@@ -143,7 +149,7 @@ export default function BookingCalendar() {
     return <CalendarLegend items={legendItems} />;
   };
 
-  const TimeSlotSelector = () => {
+  const renderTimeSlots = () => {
     if (!selectedDate) {
       return (
         <Card>
@@ -158,6 +164,7 @@ export default function BookingCalendar() {
     }
 
     const availableSlots = getAvailabilityForDate(selectedDate);
+    if (!availableSlots || !Array.isArray(availableSlots)) return null;
 
     return (
       <Card>
@@ -173,58 +180,42 @@ export default function BookingCalendar() {
             </p>
 
             <div className="space-y-3">
-              {availableSlots.map(
-                (slot: { slot: Key | null | undefined; isAvailable: any }) => (
-                  <Button
-                    key={slot.slot}
-                    variant={
-                      selectedTimeSlot === slot.slot ? "default" : "outline"
-                    }
-                    className="w-full justify-between h-auto p-4"
-                    disabled={!slot.isAvailable}
-                    onClick={() => handleTimeSlotSelect(slot.slot)}
-                  >
-                    <div className="text-right">
-                      <div className="font-medium">
-                        {slot.slot === "afternoon" ? "צהריים" : "ערב"}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {TIME_SLOT_LABELS[slot.slot]}
-                      </div>
+              {availableSlots.map((slot: AvailabilitySlot) => (
+                <Button
+                  key={slot.slot}
+                  variant={
+                    selectedTimeSlot === slot.slot ? "default" : "outline"
+                  }
+                  className="w-full justify-between h-auto p-4"
+                  disabled={!slot.isAvailable}
+                  onClick={() =>
+                    slot.isAvailable && handleTimeSlotSelect(slot.slot)
+                  }
+                >
+                  <div className="text-right">
+                    <div className="font-medium">
+                      {slot.slot === "afternoon" ? "צהריים" : "ערב"}
                     </div>
+                    <div className="text-sm text-muted-foreground">
+                      {TIME_SLOT_LABELS[slot.slot]}
+                    </div>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      {slot.slot === "afternoon" && (
-                        <Badge variant="secondary" className="text-xs">
-                          עד 25 איש
-                        </Badge>
-                      )}
-                      {slot.slot === "evening" && (
-                        <Badge variant="secondary" className="text-xs">
-                          4 שעות
-                        </Badge>
-                      )}
-                      {!slot.isAvailable && (
-                        <Badge variant="destructive" className="text-xs">
-                          תפוס
-                        </Badge>
-                      )}
-                    </div>
-                  </Button>
-                ),
-              )}
+                  <div className="flex items-center gap-2">
+                    {slot.slot === "afternoon" && (
+                      <Badge variant="secondary" className="text-xs">
+                        עד 25 איש
+                      </Badge>
+                    )}
+                    {slot.slot === "evening" && (
+                      <Badge variant="secondary" className="text-xs">
+                        ללא הגבלה
+                      </Badge>
+                    )}
+                  </div>
+                </Button>
+              ))}
             </div>
-
-            {availableSlots.every(
-              (slot: { isAvailable: any }) => !slot.isAvailable,
-            ) && (
-              <div className="text-center py-4">
-                <Users className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  אין שעות פנויות בתאריך זה
-                </p>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -254,7 +245,7 @@ export default function BookingCalendar() {
         transition={{ duration: 0.8, delay: 0.2 }}
         className="hidden md:block"
       >
-        <TimeSlotSelector />
+        {renderTimeSlots()}
       </motion.div>
 
       {/* Mobile Time Slot Sidebar */}
@@ -279,7 +270,7 @@ export default function BookingCalendar() {
               </div>
 
               <div className="p-4 flex-1 overflow-y-auto">
-                <TimeSlotSelector />
+                {renderTimeSlots()}
               </div>
 
               <div className="p-4 border-t">
