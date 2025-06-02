@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -52,6 +54,8 @@ export function UserInfoDialog({ open, onOpenChange }: UserInfoDialogProps) {
     },
   });
 
+  const createBooking = useMutation(api.set_functions.createBooking);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
 
@@ -74,32 +78,36 @@ export function UserInfoDialog({ open, onOpenChange }: UserInfoDialogProps) {
       phone: values.customerPhone,
     });
 
-    // Prepare complete booking data for submission
-    const completeBookingData = {
-      ...bookingData,
-      customerName: values.customerName,
-      customerEmail: values.customerEmail,
-      customerPhone: values.customerPhone,
-      createdAt: Date.now(),
-    };
+    try {
+      // Submit booking to Convex
+      await createBooking({
+        customerName: values.customerName,
+        customerEmail: values.customerEmail,
+        customerPhone: values.customerPhone,
+        eventDate: bookingData.selectedDate.split("T")[0], // Convert to YYYY-MM-DD
+        timeSlot: bookingData.selectedTimeSlot,
+        numberOfParticipants: bookingData.numberOfParticipants,
+        extraHours: bookingData.extraHours || 0,
+        includesKaraoke: bookingData.includesKaraoke,
+        includesPhotographer: bookingData.includesPhotographer,
+        includesFood: bookingData.includesFood,
+        includesDrinks: bookingData.includesDrinks,
+        includesSnacks: bookingData.includesSnacks,
+        totalPrice: bookingData.totalPrice,
+      });
 
-    // Save complete booking data to session storage
-    sessionStorage.setItem(
-      "completeBookingData",
-      JSON.stringify(completeBookingData),
-    );
-
-    // Simulate API call (replace with actual API call)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    console.log("Complete booking data:", completeBookingData);
-
-    setIsSubmitting(false);
-    setBookingSuccess(true);
-
-    toast.success("ההזמנה התקבלה!", {
-      description: "בקשתך נשלחה לאישור. נחזור אליך בהקדם.",
-    });
+      setBookingSuccess(true);
+      toast.success("ההזמנה התקבלה!", {
+        description: "בקשתך נשלחה לאישור. נחזור אליך בהקדם.",
+      });
+    } catch (error) {
+      console.error("Failed to create booking:", error);
+      toast.error("שגיאה", {
+        description: "אירעה שגיאה בשליחת ההזמנה. נא לנסות שוב.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const handleNewBooking = () => {
@@ -113,7 +121,7 @@ export function UserInfoDialog({ open, onOpenChange }: UserInfoDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" style={{ direction: "rtl" }}>
         {!bookingSuccess ? (
           <>
             <DialogHeader>
@@ -125,79 +133,83 @@ export function UserInfoDialog({ open, onOpenChange }: UserInfoDialogProps) {
 
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void form.handleSubmit(onSubmit)(e);
+                }}
               >
-                <FormField
-                  control={form.control}
-                  name="customerName"
-                  render={({ field }) => (
-                    <FormItem className="text-right">
-                      <FormLabel>שם מלא</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="ישראל ישראלי"
-                          {...field}
-                          className="text-right"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="customerName"
+                    render={({ field }) => (
+                      <FormItem className="text-right">
+                        <FormLabel>שם מלא</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="ישראל ישראלי"
+                            {...field}
+                            className="text-right"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="customerPhone"
-                  render={({ field }) => (
-                    <FormItem className="text-right">
-                      <FormLabel>טלפון</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="050-1234567"
-                          {...field}
-                          className="text-right"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="customerPhone"
+                    render={({ field }) => (
+                      <FormItem className="text-right">
+                        <FormLabel>טלפון</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="050-1234567"
+                            {...field}
+                            className="text-right"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="customerEmail"
-                  render={({ field }) => (
-                    <FormItem className="text-right">
-                      <FormLabel>אימייל</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="example@example.com"
-                          {...field}
-                          className="text-right"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="customerEmail"
+                    render={({ field }) => (
+                      <FormItem className="text-right">
+                        <FormLabel>אימייל</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="example@example.com"
+                            {...field}
+                            className="text-right"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <DialogFooter className="sm:justify-between">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    ביטול
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "שולח..." : "שלח הזמנה"}
-                  </Button>
-                </DialogFooter>
+                  <DialogFooter className="sm:justify-between">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      ביטול
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "שולח..." : "שלח הזמנה"}
+                    </Button>
+                  </DialogFooter>
+                </div>
               </form>
             </Form>
           </>
@@ -208,19 +220,17 @@ export function UserInfoDialog({ open, onOpenChange }: UserInfoDialogProps) {
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 ההזמנה התקבלה!
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-start">
                 תודה! קיבלנו את בקשתך ונחזור אליך בהקדם לאישור ופרטי תשלום.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="py-4">
-              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  מספר הזמנה: #
-                  {Math.random().toString(36).substr(2, 9).toUpperCase()}
-                </p>
-              </div>
-            </div>
+            <DialogDescription className="text-start">
+              אם יש לך שאלות נוספות, אתה מוזמן ליצור איתנו קשר ב:
+              <br />
+              <strong>טלפון:</strong> 050-1234567
+              <br />
+            </DialogDescription>
 
             <DialogFooter>
               <Button onClick={handleNewBooking} className="w-full">
