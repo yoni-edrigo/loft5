@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isBefore, startOfDay } from "date-fns";
@@ -11,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import BaseCalendar from "@/components/base-calendar";
 import CalendarLegend from "@/components/calendar-legend";
-import { TimeSlot, AvailabilitySlot } from "@/lib/types";
+import { TimeSlot } from "@/lib/types";
 
 const TIME_SLOT_LABELS: Record<TimeSlot, string> = {
   afternoon: "צהריים (12:00-16:00)",

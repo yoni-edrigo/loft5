@@ -4,15 +4,13 @@ import BookingSummary from "@/components/booking-summary";
 import ImageGallery from "@/components/image-gallery";
 import { Toaster } from "@/components/ui/sonner";
 import FloatingOfficeButton from "@/components/floating-office-button";
-import Header from "./components/header";
+import Hero from "./components/hero";
 import Footer from "./components/footer";
-import { BookingStoreSync } from "@/components/booking-store-sync";
 
 export default function LandingPageV2() {
   return (
-    <main className="flex min-h-screen flex-col">
-      <BookingStoreSync />
-      <Header />
+    <>
+      <Hero />
 
       <section
         id="calendar"
@@ -65,6 +63,6 @@ export default function LandingPageV2() {
       <Toaster />
 
       <Footer />
-    </main>
+    </>
   );
 }

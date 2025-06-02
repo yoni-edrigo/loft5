@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
 
-export default function Header() {
+export default function Hero() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -42,7 +42,7 @@ export default function Header() {
   }, [currentIndex, goToSlide, isAnimating, photos.length]);
 
   return (
-    <header className="relative h-[80vh] min-h-[600px] w-full flex items-center justify-center text-white overflow-hidden">
+    <section className="relative h-[80vh] min-h-[600px] w-full flex items-center justify-center text-white overflow-hidden">
       {/* Carousel Images */}
       {photos.length > 0 && (
         <AnimatePresence initial={false}>
@@ -125,6 +125,6 @@ export default function Header() {
           </motion.div>
         </motion.div>
       </div>
-    </header>
+    </section>
   );
 }
