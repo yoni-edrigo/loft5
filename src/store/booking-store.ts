@@ -1,5 +1,10 @@
 import { create } from "zustand";
-import { TimeSlot, AvailabilitySlot, PricingData } from "@/lib/types";
+import {
+  TimeSlot,
+  TimeSlotData,
+  AvailabilitySlot,
+  PricingData,
+} from "@/lib/types";
 import { format } from "date-fns";
 
 export type BookingStore = {
@@ -44,7 +49,7 @@ export type BookingStore = {
 
   // Calculated values
   calculateTotalPrice: () => number;
-  getAvailabilityForDate: (date: Date) => AvailabilitySlot[];
+  getAvailabilityForDate: (date: Date) => TimeSlotData[];
   isDateAvailable: (date: Date) => boolean;
 
   // Reset
@@ -89,10 +94,9 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       customerPhone: info.phone,
     }),
 
-  // Calculated values
   calculateTotalPrice: () => {
-    const state = get();
     const {
+      pricing,
       selectedTimeSlot,
       numberOfParticipants,
       extraHours,
@@ -101,54 +105,39 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       includesFood,
       includesDrinks,
       includesSnacks,
-      pricing,
-    } = state;
+    } = get();
 
-    if (!selectedTimeSlot || !pricing) return 0;
+    if (!pricing || !selectedTimeSlot) return 0;
 
     let total = 0;
 
     if (selectedTimeSlot === "afternoon") {
-      // Afternoon pricing
-      if (numberOfParticipants > 25) {
-        // Large group (>25 participants) requires karaoke room to be opened
-        total = pricing.afternoonWithKaraoke;
-      } else {
-        // Regular afternoon pricing
-        total = includesKaraoke
-          ? pricing.afternoonWithKaraoke
-          : pricing.afternoonWithoutKaraoke;
-      }
+      // Base price for afternoon
+      total =
+        numberOfParticipants > 25
+          ? pricing.afternoonWithKaraoke // Large groups always include karaoke
+          : includesKaraoke
+            ? pricing.afternoonWithKaraoke
+            : pricing.afternoonWithoutKaraoke;
 
-      // Add optional food/drinks for afternoon (per person pricing)
-      if (includesFood) {
-        total += pricing.foodPerPerson * numberOfParticipants;
-      }
-      if (includesDrinks) {
+      // Add per-person costs for food and drinks if selected
+      if (includesFood) total += pricing.foodPerPerson * numberOfParticipants;
+      if (includesDrinks)
         total += pricing.drinksPerPerson * numberOfParticipants;
-      }
-      if (includesSnacks) {
+      if (includesSnacks)
         total += pricing.snacksPerPerson * numberOfParticipants;
-      }
-
-      // Ensure minimum price for afternoon
-      total = Math.max(total, pricing.minimumPrice);
     } else {
-      // Evening pricing - base loft rental per person
+      // Evening event base price
       total = pricing.loftPerPerson * numberOfParticipants;
 
-      // Add optional food/drinks/snacks
-      if (includesFood) {
-        total += pricing.foodPerPerson * numberOfParticipants;
-      }
-      if (includesDrinks) {
+      // Add selected per-person options
+      if (includesFood) total += pricing.foodPerPerson * numberOfParticipants;
+      if (includesDrinks)
         total += pricing.drinksPerPerson * numberOfParticipants;
-      }
-      if (includesSnacks) {
+      if (includesSnacks)
         total += pricing.snacksPerPerson * numberOfParticipants;
-      }
 
-      // Add extra hours
+      // Add extra hours if any
       if (extraHours > 0) {
         total += extraHours * pricing.extraHourPerPerson * numberOfParticipants;
       }
@@ -168,14 +157,15 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   getAvailabilityForDate: (date: Date) => {
     const state = get();
     const dateStr = format(date, "yyyy-MM-dd");
-    return (state.currentAvailability || []).filter(
+    const availability = (state.currentAvailability || []).find(
       (slot) => slot.date === dateStr,
     );
+    return availability?.timeSlots || [];
   },
 
   isDateAvailable: (date: Date) => {
     const slots = get().getAvailabilityForDate(date);
-    return slots.length > 0 && slots.some((slot) => slot.isAvailable);
+    return slots.length > 0 && slots.some((slot) => !slot.bookingId);
   },
 
   resetBooking: () =>

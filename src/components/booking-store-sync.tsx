@@ -45,20 +45,17 @@ export function BookingStoreSync() {
     if (!availability) return;
 
     // Transform availability data to match expected store format
-    const transformedSlots = [];
-    for (const dateAvailability of availability) {
-      const slots = dateAvailability.availableSlots;
-      for (const slot of slots) {
-        transformedSlots.push({
-          date: dateAvailability.date,
-          ...slot,
-        });
-      }
-    }
+    const transformedSlots = availability.map((dateAvailability) => ({
+      date: dateAvailability.date,
+      timeSlots: dateAvailability.availableSlots,
+    }));
 
     console.log("[BookingStoreSync] Availability data received:", {
       dates: availability.length,
-      slots: transformedSlots.length,
+      slots: transformedSlots.reduce(
+        (acc, curr) => acc + curr.timeSlots.length,
+        0,
+      ),
     });
 
     setAvailability(transformedSlots);

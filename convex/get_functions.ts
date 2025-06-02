@@ -42,10 +42,10 @@ export const getAvailableDates = query({
       .collect();
 
     return availabilityRecords
-      .filter((record) => record.timeSlots.some((slot) => slot.isAvailable))
+      .filter((record) => record.timeSlots.some((slot) => !slot.bookingId))
       .map((record) => ({
         date: record.date,
-        availableSlots: record.timeSlots.filter((slot) => slot.isAvailable),
+        availableSlots: record.timeSlots.filter((slot) => !slot.bookingId),
       }));
   },
 });
@@ -68,11 +68,19 @@ export const getBooking = query({
 
 // Get bookings by date
 export const getBookingsByDate = query({
-  args: { date: v.string() },
+  args: {
+    date: v.string(),
+    approvedOnly: v.optional(v.boolean()),
+  },
   handler: async (ctx, args) => {
-    return await ctx.db
+    let query = ctx.db
       .query("bookings")
-      .filter((q) => q.eq(q.field("eventDate"), args.date))
-      .collect();
+      .filter((q) => q.eq(q.field("eventDate"), args.date));
+
+    if (args.approvedOnly) {
+      query = query.filter((q) => q.neq(q.field("approvedAt"), null));
+    }
+
+    return await query.collect();
   },
 });

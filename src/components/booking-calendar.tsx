@@ -92,10 +92,7 @@ export default function BookingCalendar() {
 
         {!isPast && available && (
           <span className="text-[8px] sm:text-[10px] md:text-xs mt-0.5 sm:mt-1 text-green-600">
-            {slots.filter((s: { isAvailable: any }) => s.isAvailable).length ===
-            2
-              ? "פנוי"
-              : "חלקי"}
+            {slots.filter((s) => !s.bookingId).length === 2 ? "פנוי" : "חלקי"}
           </span>
         )}
 
@@ -176,26 +173,30 @@ export default function BookingCalendar() {
             </p>
 
             <div className="space-y-3">
-              {availableSlots.map((slot: AvailabilitySlot) => (
-                <Button
-                  key={slot.slot}
-                  variant={
-                    selectedTimeSlot === slot.slot ? "default" : "outline"
-                  }
-                  className="w-full justify-between h-auto p-4"
-                  disabled={!slot.isAvailable}
-                  onClick={() =>
-                    slot.isAvailable && handleTimeSlotSelect(slot.slot)
-                  }
-                >
-                  <div className="text-right">
-                    <div className="font-medium">
-                      {slot.slot === "afternoon" ? "צהריים" : "ערב"}
+              {availableSlots.map(
+                (slot: { slot: TimeSlot; bookingId?: string }) => (
+                  <Button
+                    key={slot.slot}
+                    variant={
+                      selectedTimeSlot === slot.slot ? "default" : "outline"
+                    }
+                    className="w-full justify-between h-auto p-4"
+                    disabled={!!slot.bookingId}
+                    onClick={() =>
+                      !slot.bookingId && handleTimeSlotSelect(slot.slot)
+                    }
+                  >
+                    <div className="text-right">
+                      <div className="font-medium">
+                        {slot.slot === "afternoon" ? "צהריים" : "ערב"}
+                      </div>
+                      <div className="text-sm">
+                        {TIME_SLOT_LABELS[slot.slot]}
+                      </div>
                     </div>
-                    <div className="text-sm">{TIME_SLOT_LABELS[slot.slot]}</div>
-                  </div>
-                </Button>
-              ))}
+                  </Button>
+                ),
+              )}
             </div>
           </div>
         </CardContent>

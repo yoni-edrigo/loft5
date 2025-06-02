@@ -1,14 +1,18 @@
-import { Doc } from "convex/_generated/dataModel";
+import { Doc, Id } from "convex/_generated/dataModel";
 
 // Time slot type (matches Convex schema)
 export type TimeSlot = "afternoon" | "evening";
 
 // Base types from Convex schema
-export type AvailabilitySlot = {
-  date: string;
+export interface TimeSlotData {
   slot: TimeSlot;
-  isAvailable: boolean;
-};
+  bookingId?: Id<"bookings">;
+}
+
+export interface AvailabilitySlot {
+  date: string;
+  timeSlots: TimeSlotData[];
+}
 
 export type DateAvailability = Omit<
   Doc<"availability">,

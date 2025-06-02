@@ -1,4 +1,5 @@
 import { mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 export const seedDatabase = mutation({
   args: {},
@@ -41,39 +42,30 @@ export const seedDatabase = mutation({
       photographerPrice: 1500,
     });
 
-    // 2. Create availability for next 3 months
+    // 2. Create availability for next 3 months - all slots available initially
     const today = new Date();
-    const availability = [];
+    const availabilityMap = new Map<string, Id<"availability">>(); // Store availability records by date
 
     for (let i = 0; i < 90; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       const dateString = date.toISOString().split("T")[0]; // YYYY-MM-DD
 
-      // Skip some random dates as unavailable (holidays, maintenance)
-      const isUnavailable = Math.random() < 0.1; // 10% chance unavailable
-
-      availability.push({
+      const availabilityId = await ctx.db.insert("availability", {
         date: dateString,
         timeSlots: [
           {
             slot: "afternoon" as const,
-            isAvailable: !isUnavailable && Math.random() > 0.2, // 80% available
           },
           {
             slot: "evening" as const,
-            isAvailable: !isUnavailable && Math.random() > 0.3, // 70% available
           },
         ],
       });
+      availabilityMap.set(dateString, availabilityId);
     }
 
-    // Insert all availability records
-    for (const record of availability) {
-      await ctx.db.insert("availability", record);
-    }
-
-    // 3. Create some sample bookings
+    // 3. Create sample bookings
     const sampleBookings = [
       {
         customerName: "יוסי כהן",
@@ -90,6 +82,7 @@ export const seedDatabase = mutation({
         includesSnacks: true,
         totalPrice: 17675, // (35 × 100 base) + (35 × 70 food) + (35 × 70 drinks) + (35 × 30 snacks) + (35 × 1 × 35 extra hour) + 1500 photographer
         createdAt: Date.now(),
+        approvedAt: Date.now() - 1000 * 60 * 60 * 24 * 2, // Approved 2 days ago
       },
       {
         customerName: "שרה לוי",
@@ -106,6 +99,7 @@ export const seedDatabase = mutation({
         includesSnacks: true,
         totalPrice: 3500, // 1500 (afternoon with karaoke) + (20 × 70 food) + (20 × 30 snacks)
         createdAt: Date.now(),
+        approvedAt: Date.now() - 1000 * 60 * 60 * 24, // Approved 1 day ago
       },
       {
         customerName: "דוד מזרחי",
@@ -122,6 +116,7 @@ export const seedDatabase = mutation({
         includesSnacks: false,
         totalPrice: 4050, // (15 × 100 base) + (15 × 70 drinks), meets minimum 1200
         createdAt: Date.now(),
+        approvedAt: Date.now() - 1000 * 60 * 60 * 12, // Approved 12 hours ago
       },
       {
         customerName: "רחל אברהם",
@@ -138,17 +133,37 @@ export const seedDatabase = mutation({
         includesSnacks: false,
         totalPrice: 4180, // 700 (afternoon base) + 1500 (photographer) + (12 × 70 food) + (12 × 70 drinks)
         createdAt: Date.now(),
+        // This booking is not yet approved
       },
     ];
 
-    // Insert sample bookings
+    // Insert bookings and update availability slots
     for (const booking of sampleBookings) {
-      await ctx.db.insert("bookings", booking);
+      const bookingId = await ctx.db.insert("bookings", booking);
+      const availabilityId = availabilityMap.get(booking.eventDate);
+
+      if (availabilityId) {
+        const availability = await ctx.db.get(availabilityId);
+        if (availability) {
+          // Update the corresponding time slot with the booking ID
+          const updatedTimeSlots = availability.timeSlots.map(
+            (slot: {
+              slot: "afternoon" | "evening";
+              bookingId?: Id<"bookings">;
+            }) =>
+              slot.slot === booking.timeSlot ? { ...slot, bookingId } : slot,
+          );
+
+          await ctx.db.patch(availabilityId, {
+            timeSlots: updatedTimeSlots,
+          });
+        }
+      }
     }
 
     console.log("Database seeded successfully!");
     console.log(`- Created pricing structure`);
-    console.log(`- Created ${availability.length} availability records`);
+    console.log(`- Created ${availabilityMap.size} availability records`);
     console.log(`- Created ${sampleBookings.length} sample bookings`);
 
     return {

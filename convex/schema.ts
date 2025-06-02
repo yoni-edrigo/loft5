@@ -23,6 +23,7 @@ export default defineSchema({
     includesSnacks: v.boolean(),
     totalPrice: v.number(),
     createdAt: v.number(),
+    approvedAt: v.optional(v.number()), // Timestamp when booking was approved
   }),
 
   // Fixed pricing structure
@@ -51,7 +52,7 @@ export default defineSchema({
     timeSlots: v.array(
       v.object({
         slot: v.union(v.literal("afternoon"), v.literal("evening")),
-        isAvailable: v.boolean(),
+        bookingId: v.optional(v.id("bookings")), // ID of booking if slot is taken
       }),
     ),
   }).index("by_date", ["date"]),

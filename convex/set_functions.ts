@@ -1,5 +1,7 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
+
 // ============ MUTATIONS ============
 
 // Helper function to validate client-calculated price
@@ -67,7 +69,7 @@ export const createBooking = mutation({
     }
 
     const timeSlotAvailable = availability.timeSlots.find(
-      (slot) => slot.slot === args.timeSlot && slot.isAvailable,
+      (slot) => slot.slot === args.timeSlot && !slot.bookingId,
     );
 
     if (!timeSlotAvailable) {
@@ -100,10 +102,10 @@ export const createBooking = mutation({
       createdAt: Date.now(),
     });
 
-    // Mark time slot as booked
+    // Mark time slot as booked by linking it to the booking
     await ctx.db.patch(availability._id, {
       timeSlots: availability.timeSlots.map((slot) =>
-        slot.slot === args.timeSlot ? { ...slot, isAvailable: false } : slot,
+        slot.slot === args.timeSlot ? { ...slot, bookingId } : slot,
       ),
     });
 
@@ -118,7 +120,7 @@ export const cancelBooking = mutation({
     const booking = await ctx.db.get(args.id);
     if (!booking) throw new Error("Booking not found");
 
-    // Free up the time slot
+    // Free up the time slot by removing the bookingId
     const availability = await ctx.db
       .query("availability")
       .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
@@ -127,9 +129,7 @@ export const cancelBooking = mutation({
     if (availability) {
       await ctx.db.patch(availability._id, {
         timeSlots: availability.timeSlots.map((slot) =>
-          slot.slot === booking.timeSlot
-            ? { ...slot, isAvailable: true }
-            : slot,
+          slot.slot === booking.timeSlot ? { slot: slot.slot } : slot,
         ),
       });
     }
@@ -147,7 +147,7 @@ export const updateAvailability = mutation({
     timeSlots: v.array(
       v.object({
         slot: v.union(v.literal("afternoon"), v.literal("evening")),
-        isAvailable: v.boolean(),
+        bookingId: v.optional(v.id("bookings")), // ID of booking if slot is taken
       }),
     ),
   },
@@ -190,5 +190,37 @@ export const updatePricing = mutation({
     }
 
     return { success: true };
+  },
+});
+
+// Delete all data from all tables
+export const deleteAllData = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Delete all existing records from all tables
+    const pricingRecords = await ctx.db.query("pricing").collect();
+    for (const record of pricingRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    const availabilityRecords = await ctx.db.query("availability").collect();
+    for (const record of availabilityRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    const bookingRecords = await ctx.db.query("bookings").collect();
+    for (const record of bookingRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    return {
+      success: true,
+      message: "All data has been deleted from all tables",
+      deletedCounts: {
+        pricing: pricingRecords.length,
+        availability: availabilityRecords.length,
+        bookings: bookingRecords.length,
+      },
+    };
   },
 });
