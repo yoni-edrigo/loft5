@@ -22,6 +22,7 @@ const validatePrice = (pricing: any, args: any, calculatedPrice: number) => {
         pricing.extraHourPerPerson;
     }
   } else {
+    // Afternoon slot base price
     if (args.numberOfParticipants > 25) {
       expectedPrice = pricing.afternoonWithKaraoke;
     } else {
@@ -29,13 +30,23 @@ const validatePrice = (pricing: any, args: any, calculatedPrice: number) => {
         ? pricing.afternoonWithKaraoke
         : pricing.afternoonWithoutKaraoke;
     }
-  }
 
+    // Add per-person costs for food and drinks
+    if (args.includesFood)
+      expectedPrice += pricing.foodPerPerson * args.numberOfParticipants;
+    if (args.includesDrinks)
+      expectedPrice += pricing.drinksPerPerson * args.numberOfParticipants;
+    if (args.includesSnacks)
+      expectedPrice += pricing.snacksPerPerson * args.numberOfParticipants;
+  }
   if (args.includesPhotographer) {
     expectedPrice += pricing.photographerPrice;
   }
 
-  expectedPrice = Math.max(expectedPrice, pricing.minimumPrice);
+  // Only apply minimum price for evening events
+  if (args.timeSlot === "evening") {
+    expectedPrice = Math.max(expectedPrice, pricing.minimumPrice);
+  }
 
   return Math.abs(expectedPrice - calculatedPrice) < 1; // Allow for rounding
 };
@@ -221,6 +232,42 @@ export const deleteAllData = mutation({
         availability: availabilityRecords.length,
         bookings: bookingRecords.length,
       },
+    };
+  },
+});
+
+// Delete all bookings
+export const deleteAllBookings = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Get all bookings
+    const bookingRecords = await ctx.db.query("bookings").collect();
+
+    // Get all availability records that have bookings
+    const availabilityRecords = await ctx.db.query("availability").collect();
+
+    // Clear booking references from availability slots
+    for (const availability of availabilityRecords) {
+      const updatedTimeSlots = availability.timeSlots.map((slot) => ({
+        slot: slot.slot,
+        // Remove the bookingId if it exists
+        ...(slot.bookingId ? {} : { bookingId: slot.bookingId }),
+      }));
+
+      await ctx.db.patch(availability._id, {
+        timeSlots: updatedTimeSlots,
+      });
+    }
+
+    // Delete all bookings
+    for (const booking of bookingRecords) {
+      await ctx.db.delete(booking._id);
+    }
+
+    return {
+      success: true,
+      message: "All bookings have been deleted",
+      deletedCount: bookingRecords.length,
     };
   },
 });
