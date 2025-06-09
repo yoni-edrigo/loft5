@@ -52,7 +52,6 @@ export function BookingManager() {
   const [nameFilter, setNameFilter] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
-  const isMobile = useIsMobile();
 
   // Query all bookings
   const bookings = useQuery(api.get_functions.getAllBookings) || [];
