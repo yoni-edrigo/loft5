@@ -271,3 +271,49 @@ export const deleteAllBookings = mutation({
     };
   },
 });
+
+// Approve a booking
+export const approveBooking = mutation({
+  args: { id: v.id("bookings") },
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.id);
+    if (!booking) throw new Error("Booking not found");
+
+    // Mark booking as approved
+    await ctx.db.patch(args.id, {
+      approvedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+// Decline a booking and free up the time slot
+export const declineBooking = mutation({
+  args: { id: v.id("bookings") },
+  handler: async (ctx, args) => {
+    const booking = await ctx.db.get(args.id);
+    if (!booking) throw new Error("Booking not found");
+
+    // Mark booking as declined
+    await ctx.db.patch(args.id, {
+      declinedAt: Date.now(),
+    });
+
+    // Free up the time slot
+    const availability = await ctx.db
+      .query("availability")
+      .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
+      .first();
+
+    if (availability) {
+      await ctx.db.patch(availability._id, {
+        timeSlots: availability.timeSlots.map((slot) =>
+          slot.slot === booking.timeSlot ? { slot: slot.slot } : slot,
+        ),
+      });
+    }
+
+    return { success: true };
+  },
+});

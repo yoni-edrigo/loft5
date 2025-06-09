@@ -84,3 +84,20 @@ export const getBookingsByDate = query({
     return await query.collect();
   },
 });
+
+// Get pending bookings (admin)
+export const getPendingBookings = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("bookings")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("approvedAt"), undefined),
+          q.eq(q.field("declinedAt"), undefined),
+        ),
+      )
+      .order("desc")
+      .collect();
+  },
+});
