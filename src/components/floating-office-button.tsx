@@ -8,7 +8,8 @@ import { useNavigate } from "@tanstack/react-router";
 export default function FloatingOfficeButton() {
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
-  const handleClick = () => void navigate({ to: "/office" });
+  const handleClick = () =>
+    void navigate({ to: "/office", search: { tab: "bookings" } });
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
