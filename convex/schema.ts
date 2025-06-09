@@ -25,6 +25,8 @@ export default defineSchema({
     createdAt: v.number(),
     approvedAt: v.optional(v.number()), // Timestamp when booking was approved
     declinedAt: v.optional(v.number()), // Timestamp when booking was declined
+    paidAt: v.optional(v.number()), // Timestamp when payment was made
+    paymentMethod: v.optional(v.string()), // Payment method used
   }),
 
   // Fixed pricing structure

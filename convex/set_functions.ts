@@ -274,14 +274,22 @@ export const deleteAllBookings = mutation({
 
 // Approve a booking
 export const approveBooking = mutation({
-  args: { id: v.id("bookings") },
+  args: {
+    id: v.id("bookings"),
+    paidAt: v.optional(v.number()),
+    paymentMethod: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     const booking = await ctx.db.get(args.id);
     if (!booking) throw new Error("Booking not found");
 
-    // Mark booking as approved
+    // Mark booking as approved and optionally paid
     await ctx.db.patch(args.id, {
       approvedAt: Date.now(),
+      ...(args.paidAt !== undefined ? { paidAt: args.paidAt } : {}),
+      ...(args.paymentMethod !== undefined
+        ? { paymentMethod: args.paymentMethod }
+        : {}),
     });
 
     return { success: true };

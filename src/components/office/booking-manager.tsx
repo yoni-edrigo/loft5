@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,27 @@ import { Calendar } from "../ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { CalendarIcon, Search, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+
+// Custom hook to determine if the screen is mobile
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+};
 
 export function BookingManager() {
   const [selectedTab, setSelectedTab] = useState("pending");
@@ -30,11 +51,13 @@ export function BookingManager() {
   );
   const [nameFilter, setNameFilter] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const isMobile = useIsMobile();
 
   // Query all bookings
   const bookings = useQuery(api.get_functions.getAllBookings) || [];
 
-  // Filter bookings based on current tab, name and date
+  // Filter bookings based on current tab, name, date, and payment status
   const filteredBookings = bookings.filter((booking) => {
     // First filter by status
     const matchesStatus =
@@ -55,15 +78,22 @@ export function BookingManager() {
       ? booking.eventDate === format(selectedDate, "yyyy-MM-dd")
       : true;
 
-    return matchesStatus && matchesName && matchesDate;
+    // Then filter by payment status
+    const matchesPayment =
+      paymentFilter === "all" ||
+      (paymentFilter === "paid" && booking.paidAt) ||
+      (paymentFilter === "unpaid" && !booking.paidAt);
+
+    return matchesStatus && matchesName && matchesDate && matchesPayment;
   });
 
   const clearFilters = () => {
     setNameFilter("");
     setSelectedDate(undefined);
+    setPaymentFilter("all");
   };
 
-  const hasFilters = nameFilter || selectedDate;
+  const hasFilters = nameFilter || selectedDate || paymentFilter !== "all";
 
   return (
     <Card>
@@ -104,6 +134,17 @@ export function BookingManager() {
               </PopoverContent>
             </Popover>
 
+            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="סטטוס תשלום" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">הכל</SelectItem>
+                <SelectItem value="paid">שולם</SelectItem>
+                <SelectItem value="unpaid">לא שולם</SelectItem>
+              </SelectContent>
+            </Select>
+
             {hasFilters && (
               <Button
                 variant="ghost"
@@ -120,82 +161,119 @@ export function BookingManager() {
 
       <CardContent>
         <Tabs value={selectedTab} onValueChange={setSelectedTab} dir="rtl">
-          <TabsList className="mb-4">
-            <TabsTrigger value="pending">ממתינות לאישור</TabsTrigger>
-            <TabsTrigger value="approved">מאושרות</TabsTrigger>
-            <TabsTrigger value="declined">נדחו</TabsTrigger>
-            <TabsTrigger value="all">הכל</TabsTrigger>
-          </TabsList>
+          <ScrollArea>
+            <TabsList className="text-foreground h-auto gap-2 rounded-none border-b bg-transparent px-0 py-1">
+              <TabsTrigger
+                value="pending"
+                className="hover:bg-accent hover:text-foreground data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-1 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                ממתינות לאישור
+              </TabsTrigger>
+              <TabsTrigger
+                value="approved"
+                className="hover:bg-accent hover:text-foreground data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-1 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                מאושרות
+              </TabsTrigger>
+              <TabsTrigger
+                value="declined"
+                className="hover:bg-accent hover:text-foreground data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-1 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                נדחו
+              </TabsTrigger>
+              <TabsTrigger
+                value="all"
+                className="hover:bg-accent hover:text-foreground data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-1 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                הכל
+              </TabsTrigger>
+            </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>תאריך אירוע</TableHead>
-                <TableHead>שם לקוח</TableHead>
-                <TableHead>זמן</TableHead>
-                <TableHead>משתתפים</TableHead>
-                <TableHead>סה"כ</TableHead>
-                <TableHead>סטטוס</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredBookings.length === 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center h-32 text-muted-foreground"
-                  >
-                    לא נמצאו הזמנות
-                  </TableCell>
+                  <TableHead>תאריך אירוע</TableHead>
+                  <TableHead>שם לקוח</TableHead>
+                  <TableHead>זמן</TableHead>
+                  <TableHead>משתתפים</TableHead>
+                  <TableHead>סה"כ</TableHead>
+                  <TableHead>סטטוס</TableHead>
+                  <TableHead>סטטוס תשלום</TableHead>
                 </TableRow>
-              ) : (
-                filteredBookings.map((booking) => {
-                  const isAfternoon = booking.timeSlot === "afternoon";
-                  const isApproved = !!booking.approvedAt;
-                  const isDeclined = !!booking.declinedAt;
-
-                  return (
-                    <TableRow
-                      key={booking._id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => setSelectedBooking(booking)}
+              </TableHeader>
+              <TableBody>
+                {filteredBookings.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center h-32 text-muted-foreground"
                     >
-                      <TableCell>
-                        {format(new Date(booking.eventDate), "dd/MM/yyyy", {
-                          locale: he,
-                        })}
-                      </TableCell>
-                      <TableCell>{booking.customerName}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {isAfternoon ? "צהריים" : "ערב"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{booking.numberOfParticipants}</TableCell>
-                      <TableCell>₪{formatPrice(booking.totalPrice)}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            isApproved
-                              ? "default"
+                      לא נמצאו הזמנות
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredBookings.map((booking) => {
+                    const isAfternoon = booking.timeSlot === "afternoon";
+                    const isApproved = !!booking.approvedAt;
+                    const isDeclined = !!booking.declinedAt;
+
+                    return (
+                      <TableRow
+                        key={booking._id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => setSelectedBooking(booking)}
+                      >
+                        <TableCell>
+                          {format(new Date(booking.eventDate), "dd/MM/yyyy", {
+                            locale: he,
+                          })}
+                        </TableCell>
+                        <TableCell>{booking.customerName}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {isAfternoon ? "צהריים" : "ערב"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{booking.numberOfParticipants}</TableCell>
+                        <TableCell>
+                          ₪{formatPrice(booking.totalPrice)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              isApproved
+                                ? "default"
+                                : isDeclined
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {isApproved
+                              ? "מאושרת"
                               : isDeclined
-                                ? "destructive"
-                                : "secondary"
-                          }
-                        >
-                          {isApproved
-                            ? "מאושרת"
-                            : isDeclined
-                              ? "נדחתה"
-                              : "ממתינה לאישור"}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+                                ? "נדחתה"
+                                : "ממתינה לאישור"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {booking.paidAt ? (
+                            <Badge className="bg-green-500 text-white">
+                              שולם
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">לא שולם</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </Tabs>
       </CardContent>
 

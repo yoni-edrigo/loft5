@@ -2,13 +2,7 @@ import { BookingDoc } from "@/lib/types";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { formatPrice } from "@/lib/utils";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { CardContent } from "../ui/card";
 import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
@@ -18,6 +12,13 @@ import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 interface BookingDetailsDialogProps {
   open: boolean;
@@ -33,6 +34,9 @@ export function BookingDetailsDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const approveBooking = useMutation(api.set_functions.approveBooking);
   const declineBooking = useMutation(api.set_functions.declineBooking);
+  const [markAsPaid, setMarkAsPaid] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
   if (!booking) return null;
 
@@ -43,7 +47,12 @@ export function BookingDetailsDialog({
   const handleApprove = async () => {
     setIsSubmitting(true);
     try {
-      await approveBooking({ id: booking._id });
+      const args: any = { id: booking._id };
+      if (markAsPaid && paymentMethod) {
+        args.paidAt = Date.now();
+        args.paymentMethod = paymentMethod;
+      }
+      await approveBooking(args);
       toast.success("ההזמנה אושרה!", {
         description: "הודעה תישלח ללקוח.",
       });
@@ -85,6 +94,18 @@ export function BookingDetailsDialog({
         <DialogHeader>
           <DialogTitle className="text-xl">פרטי הזמנה</DialogTitle>
         </DialogHeader>
+        <div className="mb-4">
+          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="סטטוס תשלום" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">הכל</SelectItem>
+              <SelectItem value="paid">שולם</SelectItem>
+              <SelectItem value="unpaid">לא שולם</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <CardContent className="space-y-6 ">
           {/* Customer Details */}
           <div className="space-y-3">
@@ -209,28 +230,104 @@ export function BookingDetailsDialog({
             <div className="text-2xl font-bold">
               {formatPrice(booking.totalPrice)} ₪
             </div>
+            <div className="mt-2">
+              {booking.paidAt ? (
+                <Badge className="bg-green-500 text-white">שולם</Badge>
+              ) : (
+                <Badge variant="destructive">לא שולם</Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Status */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="font-medium">סטטוס תשלום</span>
+            </div>
+            <div className="bg-muted/30 p-4 rounded-lg space-y-2">
+              {booking.paidAt ? (
+                <div className="flex justify-between">
+                  <span>שולם בתאריך:</span>
+                  <span className="font-medium">
+                    {format(new Date(booking.paidAt), "dd/MM/yyyy HH:mm", {
+                      locale: he,
+                    })}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={markAsPaid}
+                      onChange={(e) => setMarkAsPaid(e.target.checked)}
+                      disabled={isSubmitting}
+                    />
+                    סמן כשולם
+                  </label>
+                  {markAsPaid && (
+                    <div>
+                      <label className="block mb-1">אמצעי תשלום:</label>
+                      <select
+                        className="w-full border rounded p-2"
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        disabled={isSubmitting}
+                      >
+                        <option value="">בחר אמצעי תשלום</option>
+                        <option value="cash">מזומן</option>
+                        <option value="credit">אשראי</option>
+                        <option value="bit">ביט</option>
+                        <option value="bank_transfer">העברה בנקאית</option>
+                        <option value="other">אחר</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
+              {booking.paymentMethod && booking.paidAt && (
+                <div className="flex justify-between">
+                  <span>אמצעי תשלום:</span>
+                  <span className="font-medium">
+                    {(() => {
+                      switch (booking.paymentMethod) {
+                        case "cash":
+                          return "מזומן";
+                        case "credit":
+                          return "אשראי";
+                        case "bit":
+                          return "ביט";
+                        case "bank_transfer":
+                          return "העברה בנקאית";
+                        case "other":
+                          return "אחר";
+                        default:
+                          return booking.paymentMethod;
+                      }
+                    })()}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>{" "}
-        <DialogClose>
-          {/* Actions */}
-
-          <div className="flex gap-4 bottom-0 bg-background p-4 border-t">
-            <Button
-              variant="destructive"
-              onClick={() => void handleDecline()}
-              disabled={isSubmitting}
-            >
-              דחה הזמנה
-            </Button>
-            <Button
-              variant="default"
-              onClick={() => void handleApprove()}
-              disabled={isSubmitting}
-            >
-              אשר הזמנה
-            </Button>
-          </div>
-        </DialogClose>
+        {/* Actions */}
+        <div className="flex gap-4 bottom-0 bg-background p-4 border-t">
+          <Button
+            variant="destructive"
+            onClick={() => void handleDecline()}
+            disabled={isSubmitting}
+          >
+            דחה הזמנה
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => void handleApprove()}
+            disabled={isSubmitting}
+          >
+            אשר הזמנה
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
