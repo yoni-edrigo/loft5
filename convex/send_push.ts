@@ -52,11 +52,18 @@ export const sendPushToAll = action({
     );
     if (!tokens.length) return { success: false, message: "No tokens found" };
 
-    const messages: PushNotification[] = tokens.map((t: FCMToken) => ({
+    const messages = tokens.map((t: FCMToken) => ({
       token: t.token,
       notification: {
         title: args.title,
         body: args.body,
+      },
+      webpush: {
+        notification: {
+          icon: "/pwa-192x192.png",
+          badge: "/pwa-64x64.png",
+          image: "/pwa-512x512.png",
+        },
       },
     }));
 

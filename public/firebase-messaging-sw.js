@@ -24,7 +24,9 @@ self.addEventListener("push", function (event) {
   const title = data.notification?.title || "Default Title";
   const options = {
     body: data.notification?.body || "Default body",
-    // icon, badge, etc. can be added here
+    icon: "/pwa-192x192.png", // Add app icon
+    badge: "/pwa-64x64.png", // Add badge icon
+    // ...other options
   };
   console.log("[Service Worker] Showing notification:", title, options);
   event.waitUntil(self.registration.showNotification(title, options));
@@ -35,7 +37,9 @@ messaging.onBackgroundMessage(function (payload) {
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    // icon, etc.
+    icon: "/pwa-192x192.png", // Add app icon
+    badge: "/pwa-64x64.png", // Add badge icon
+    // ...other options
   };
   console.log(
     "[Service Worker] Showing background notification:",
