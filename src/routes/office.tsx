@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { BookingManager } from "@/components/office/booking-manager";
 import { PricingControl } from "@/components/office/pricing-control";
+import { FcmTokenRegistrar } from "@/components/office/fcm-token-registrar";
 
 export const Route = createFileRoute("/office")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -22,10 +23,10 @@ export const Route = createFileRoute("/office")({
 function RouteComponent() {
   const { tab } = useSearch({ from: "/office" });
   const navigate = useNavigate();
-
   return (
     <>
       <Authenticated>
+        <FcmTokenRegistrar />
         <Tabs
           value={tab}
           onValueChange={(value) => {

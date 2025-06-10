@@ -324,3 +324,30 @@ export const declineBooking = mutation({
     return { success: true };
   },
 });
+
+export const addFcmToken = mutation({
+  args: {
+    token: v.string(),
+    userId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Check if token already exists
+    const existing = await ctx.db
+      .query("fcmTokens")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .first();
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        userId: args.userId,
+        createdAt: Date.now(),
+      });
+      return { success: true, updated: true };
+    }
+    await ctx.db.insert("fcmTokens", {
+      token: args.token,
+      userId: args.userId,
+      createdAt: Date.now(),
+    });
+    return { success: true, inserted: true };
+  },
+});

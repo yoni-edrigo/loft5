@@ -14,9 +14,12 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as auth from "../auth.js";
+import type * as get_fcm_tokens from "../get_fcm_tokens.js";
 import type * as get_functions from "../get_functions.js";
 import type * as http from "../http.js";
 import type * as seed from "../seed.js";
+import type * as send_push from "../send_push.js";
+import type * as set_fcm_token from "../set_fcm_token.js";
 import type * as set_functions from "../set_functions.js";
 
 /**
@@ -29,9 +32,12 @@ import type * as set_functions from "../set_functions.js";
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  get_fcm_tokens: typeof get_fcm_tokens;
   get_functions: typeof get_functions;
   http: typeof http;
   seed: typeof seed;
+  send_push: typeof send_push;
+  set_fcm_token: typeof set_fcm_token;
   set_functions: typeof set_functions;
 }>;
 export declare const api: FilterApi<

@@ -59,4 +59,11 @@ export default defineSchema({
       }),
     ),
   }).index("by_date", ["date"]),
+
+  // FCM tokens for push notifications
+  fcmTokens: defineTable({
+    token: v.string(),
+    userId: v.optional(v.string()), // Optionally associate with a user
+    createdAt: v.number(),
+  }).index("by_token", ["token"]),
 });
