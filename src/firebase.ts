@@ -46,6 +46,19 @@ export async function requestFCMToken() {
 }
 
 onMessage(messaging, (payload) => {
-  const { title, body } = payload.notification || {};
-  toast.info(`${title}: ${body}`);
+  console.log("[FCM] Foreground message received:", payload);
+  let title, body;
+  if (payload.notification) {
+    title = payload.notification.title;
+    body = payload.notification.body;
+    console.log("[FCM] Showing toast with notification:", title, body);
+    toast.info(`${title}: ${body}`);
+  } else if (payload.data) {
+    title = payload.data.title || "(No title)";
+    body = payload.data.body || JSON.stringify(payload.data);
+    console.log("[FCM] Showing toast with data-only message:", title, body);
+    toast.info(`${title}: ${body}`);
+  } else {
+    console.log("[FCM] No notification or data in payload.", payload);
+  }
 });

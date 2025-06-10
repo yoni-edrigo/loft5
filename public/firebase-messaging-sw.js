@@ -18,20 +18,29 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 self.addEventListener("push", function (event) {
+  console.log("[Service Worker] Push event received", event);
   const data = event.data ? event.data.json() : {};
+  console.log("[Service Worker] Push event data:", data);
   const title = data.notification?.title || "Default Title";
   const options = {
     body: data.notification?.body || "Default body",
     // icon, badge, etc. can be added here
   };
+  console.log("[Service Worker] Showing notification:", title, options);
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
 messaging.onBackgroundMessage(function (payload) {
+  console.log("[Service Worker] onBackgroundMessage received", payload);
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
     // icon, etc.
   };
+  console.log(
+    "[Service Worker] Showing background notification:",
+    notificationTitle,
+    notificationOptions,
+  );
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
