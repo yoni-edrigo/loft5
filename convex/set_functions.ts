@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ============ MUTATIONS ============
 
@@ -328,24 +329,27 @@ export const declineBooking = mutation({
 export const addFcmToken = mutation({
   args: {
     token: v.string(),
-    userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Check if token already exists
+    // Get the authenticated userId from the server context
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // Upsert by userId: update if exists, else insert
     const existing = await ctx.db
       .query("fcmTokens")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
       .first();
     if (existing) {
       await ctx.db.patch(existing._id, {
-        userId: args.userId,
+        token: args.token,
         createdAt: Date.now(),
       });
       return { success: true, updated: true };
     }
     await ctx.db.insert("fcmTokens", {
       token: args.token,
-      userId: args.userId,
+      userId,
       createdAt: Date.now(),
     });
     return { success: true, inserted: true };

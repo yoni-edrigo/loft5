@@ -65,5 +65,7 @@ export default defineSchema({
     token: v.string(),
     userId: v.optional(v.string()), // Optionally associate with a user
     createdAt: v.number(),
-  }).index("by_token", ["token"]),
+  })
+    .index("by_token", ["token"])
+    .index("by_userId", ["userId"]),
 });
