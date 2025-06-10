@@ -1,8 +1,8 @@
 importScripts(
-  "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js",
+  "https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js",
 );
 importScripts(
-  "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js",
+  "https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js",
 );
 
 firebase.initializeApp({
@@ -16,3 +16,22 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
+
+self.addEventListener("push", function (event) {
+  const data = event.data ? event.data.json() : {};
+  const title = data.notification?.title || "Default Title";
+  const options = {
+    body: data.notification?.body || "Default body",
+    // icon, badge, etc. can be added here
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+messaging.onBackgroundMessage(function (payload) {
+  const notificationTitle = payload.notification.title;
+  const notificationOptions = {
+    body: payload.notification.body,
+    // icon, etc.
+  };
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});

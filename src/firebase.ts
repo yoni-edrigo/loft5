@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { toast } from "sonner"; // e.g., 'react-toastify'
 
 const firebaseConfig = {
   apiKey: "AIzaSyBcBA3jHHYAqS6VMp0kvp_J-Tfm_trapS8",
@@ -15,7 +16,12 @@ const app = initializeApp(firebaseConfig);
 export const messaging = getMessaging(app);
 
 export async function requestFCMToken() {
+  if (!("serviceWorker" in navigator)) {
+    console.error("Service workers are not supported in this browser.");
+    return null;
+  }
   try {
+    // Explicitly register the Firebase service worker for FCM
     console.log("Registering service worker for FCM...");
     const registration = await navigator.serviceWorker.register(
       "/firebase-messaging-sw.js",
@@ -38,3 +44,8 @@ export async function requestFCMToken() {
     return null;
   }
 }
+
+onMessage(messaging, (payload) => {
+  const { title, body } = payload.notification || {};
+  toast.info(`${title}: ${body}`);
+});
