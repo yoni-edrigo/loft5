@@ -28,14 +28,6 @@ interface FCMToken {
   token: string;
 }
 
-interface PushNotification {
-  token: string;
-  notification: {
-    title: string;
-    body: string;
-  };
-}
-
 export const sendPushToAll = action({
   args: {
     title: v.string(),
