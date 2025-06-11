@@ -70,13 +70,20 @@ export const createBooking = mutation({
     totalPrice: v.number(), // Client-calculated price
   },
   handler: async (ctx, args) => {
+    // Debug logs to see what's being received
+    console.log("=== createBooking called ===");
+    console.log("Received args:", JSON.stringify(args, null, 2));
+
     // Check availability
     const availability = await ctx.db
       .query("availability")
       .withIndex("by_date", (q) => q.eq("date", args.eventDate))
       .first();
 
+    console.log("Availability query result:", availability);
+
     if (!availability) {
+      console.log("ERROR: Date not available for:", args.eventDate);
       throw new Error("Date not available");
     }
 
@@ -84,18 +91,29 @@ export const createBooking = mutation({
       (slot) => slot.slot === args.timeSlot && !slot.bookingId,
     );
 
+    console.log("Time slot available:", timeSlotAvailable);
+
     if (!timeSlotAvailable) {
+      console.log("ERROR: Time slot not available for:", args.timeSlot);
       throw new Error("Time slot not available");
     }
 
     // Validate client-calculated price
     const pricing = await ctx.db.query("pricing").first();
-    if (!pricing) throw new Error("Pricing not found");
+    if (!pricing) {
+      console.log("ERROR: Pricing not found");
+      throw new Error("Pricing not found");
+    }
 
-    if (!validatePrice(pricing, args, args.totalPrice)) {
+    const priceValidation = validatePrice(pricing, args, args.totalPrice);
+    console.log("Price validation result:", priceValidation);
+
+    if (!priceValidation) {
+      console.log("ERROR: Price validation failed");
       throw new Error("Price validation failed");
     } // Create booking
-    const bookingId = await ctx.db.insert("bookings", {
+    console.log("Creating booking with data:");
+    const bookingData = {
       customerName: args.customerName,
       customerEmail: args.customerEmail,
       customerPhone: args.customerPhone,
@@ -110,7 +128,13 @@ export const createBooking = mutation({
       includesSnacks: args.includesSnacks,
       totalPrice: args.totalPrice,
       createdAt: Date.now(),
-    }); // Mark time slot as booked by linking it to the booking
+    };
+    console.log(
+      "Booking data to insert:",
+      JSON.stringify(bookingData, null, 2),
+    );
+
+    const bookingId = await ctx.db.insert("bookings", bookingData); // Mark time slot as booked by linking it to the booking
     await ctx.db.patch(availability._id, {
       timeSlots: availability.timeSlots.map((slot) =>
         slot.slot === args.timeSlot ? { ...slot, bookingId } : slot,
@@ -136,6 +160,9 @@ export const createBooking = mutation({
       // Log error but don't fail the booking creation if notification fails
       console.error("Failed to send push notification:", error);
     }
+
+    console.log("Booking created successfully with ID:", bookingId);
+    console.log("=== createBooking completed ===");
 
     return bookingId;
   },

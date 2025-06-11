@@ -84,7 +84,7 @@ export function UserInfoDialog({ open, onOpenChange }: UserInfoDialogProps) {
         customerName: values.customerName,
         customerEmail: values.customerEmail,
         customerPhone: values.customerPhone,
-        eventDate: bookingData.selectedDate.split("T")[0], // Convert to YYYY-MM-DD
+        eventDate: bookingData.selectedDate, // Remove .split("T")[0] since it's already YYYY-MM-DD
         timeSlot: bookingData.selectedTimeSlot,
         numberOfParticipants: bookingData.numberOfParticipants,
         extraHours: bookingData.extraHours || 0,

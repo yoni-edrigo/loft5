@@ -107,7 +107,6 @@ export default function BookingSummary() {
     photographerPrice;
   const isMinimumPriceApplied =
     totalPrice === pricing.minimumPrice && totalPrice > calculatedPrice;
-
   const handleContinue = () => {
     if (!selectedDate || !selectedTimeSlot) {
       toast.error("שגיאה", {
@@ -116,9 +115,15 @@ export default function BookingSummary() {
       return;
     }
 
+    // Debug logs to verify date handling
+    console.log("Selected date (original):", selectedDate);
+    console.log("Selected date (toISOString):", selectedDate.toISOString());
+    console.log("Selected date (format):", format(selectedDate, "yyyy-MM-dd"));
+    console.log("User timezone offset:", selectedDate.getTimezoneOffset());
+
     // Save booking data to session storage
     const bookingData = {
-      selectedDate: selectedDate.toISOString(),
+      selectedDate: format(selectedDate, "yyyy-MM-dd"), // This preserves local date
       selectedTimeSlot,
       numberOfParticipants,
       extraHours,
