@@ -1,6 +1,7 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal } from "./_generated/api";
 
 // ============ MUTATIONS ============
 
@@ -93,9 +94,7 @@ export const createBooking = mutation({
 
     if (!validatePrice(pricing, args, args.totalPrice)) {
       throw new Error("Price validation failed");
-    }
-
-    // Create booking
+    } // Create booking
     const bookingId = await ctx.db.insert("bookings", {
       customerName: args.customerName,
       customerEmail: args.customerEmail,
@@ -111,14 +110,32 @@ export const createBooking = mutation({
       includesSnacks: args.includesSnacks,
       totalPrice: args.totalPrice,
       createdAt: Date.now(),
-    });
-
-    // Mark time slot as booked by linking it to the booking
+    }); // Mark time slot as booked by linking it to the booking
     await ctx.db.patch(availability._id, {
       timeSlots: availability.timeSlots.map((slot) =>
         slot.slot === args.timeSlot ? { ...slot, bookingId } : slot,
       ),
     });
+
+    // Send push notification about the new booking
+    try {
+      // Format the date for a readable display
+      const date = new Date(args.eventDate);
+      const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+
+      // Create a message body that summarizes the booking details in Hebrew
+      const timeSlotText = args.timeSlot === "afternoon" ? "צהריים" : "ערב";
+      const bookingDetails = `תאריך: ${formattedDate}, שעה: ${timeSlotText}, שם: ${args.customerName}, מספר משתתפים: ${args.numberOfParticipants}`;
+
+      // Send push notification to all subscribers using an internal action
+      await ctx.scheduler.runAfter(0, internal.send_push.sendPushToAll, {
+        title: "הזמנה חדשה נכנסה",
+        body: bookingDetails,
+      });
+    } catch (error) {
+      // Log error but don't fail the booking creation if notification fails
+      console.error("Failed to send push notification:", error);
+    }
 
     return bookingId;
   },

@@ -1,5 +1,5 @@
 "use node";
-import { action } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import * as admin from "firebase-admin";
 import { api } from "./_generated/api";
@@ -28,7 +28,7 @@ interface FCMToken {
   token: string;
 }
 
-export const sendPushToAll = action({
+export const sendPushToAll = internalAction({
   args: {
     title: v.string(),
     body: v.string(),
