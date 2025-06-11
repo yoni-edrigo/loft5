@@ -1,13 +1,135 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- Basic SEO Meta Tags -->
+    <title>לופט 5 - אולם אירועים בקצרין | השכרת חלל אירועים יוקרתי</title>
+    <meta
+      name="description"
+      content="לופט 5 בקצרין - אולם אירועים יוקרתי להשכרה. אירועי צהריים וערב, קריוקי, צלם מקצועי, אוכל ומשקאות. הזמנה מקוונת פשוטה ומהירה."
+    />
+    <meta
+      name="keywords"
+      content="לופט 5, אולם אירועים, קצרין, השכרת חלל, מסיבות, קריוקי, אירועים פרטיים, הזמנת אולם, צלם, אוכל, משקאות"
+    />
+    <meta name="author" content="לופט 5" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="Hebrew" />
+
+    <!-- Viewport and Mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="לופט 5" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://loft5.co.il/" />
+    <meta property="og:title" content="לופט 5 - אולם אירועים יוקרתי בקצרין" />
+    <meta
+      property="og:description"
+      content="אולם אירועים מעוצב ויוקרתי בקצרין. אירועי צהריים עד 25 איש, אירועי ערב ללא הגבלה. קריוקי, צלם מקצועי, אוכל ומשקאות איכותיים. הזמנה מקוונת קלה ומהירה."
+    />
+    <meta property="og:image" content="/loft5-logo.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="לופט 5 - אולם אירועים בקצרין" />
+    <meta property="og:site_name" content="לופט 5" />
+    <meta property="og:locale" content="he_IL" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://loft5.co.il/" />
+    <meta name="twitter:title" content="לופט 5 - אולם אירועים יוקרתי בקצרין" />
+    <meta
+      name="twitter:description"
+      content="אולם אירועים מעוצב ויוקרתי בקצרין. אירועי צהריים עד 25 איש, אירועי ערב ללא הגבלה. הזמנה מקוונת קלה ומהירה."
+    />
+    <meta name="twitter:image" content="/loft5-logo.png" />
+    <meta name="twitter:image:alt" content="לופט 5 - אולם אירועים בקצרין" />
+
+    <!-- Additional Social Meta -->
+    <meta property="business:contact_data:locality" content="קצרין" />
+    <meta property="business:contact_data:region" content="גולן" />
+    <meta property="business:contact_data:country_name" content="ישראל" />
+    <meta property="place:location:latitude" content="32.9889" />
+    <meta property="place:location:longitude" content="35.6963" />
+
+    <!-- App Links -->
+    <meta property="al:web:url" content="https://loft5.co.il/" />
+
+    <!-- Schema.org structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "EventVenue",
+        "name": "לופט 5",
+        "description": "אולם אירועים יוקרתי בקצרין להשכרה לאירועי צהריים וערב",
+        "url": "https://loft5.co.il/",
+        "telephone": "03-1234567",
+        "email": "info@loft5.co.il",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "רחוב הדוגמה 5",
+          "addressLocality": "קצרין",
+          "addressCountry": "IL"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "32.9889",
+          "longitude": "35.6963"
+        },
+        "openingHours": ["Mo-Th 09:00-23:00", "Fr 09:00-15:00"],
+        "priceRange": "₪₪₪",
+        "amenityFeature": [
+          {
+            "@type": "LocationFeatureSpecification",
+            "name": "קריוקי",
+            "value": true
+          },
+          {
+            "@type": "LocationFeatureSpecification",
+            "name": "צלם מקצועי",
+            "value": true
+          },
+          {
+            "@type": "LocationFeatureSpecification",
+            "name": "שירותי אוכל ומשקאות",
+            "value": true
+          }
+        ],
+        "maximumAttendeeCapacity": "unlimited for evening events, 25 for afternoon events"
+      }
+    </script>
+
+    <!-- Favicons and Icons -->
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/pwa-64x64.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/pwa-512x512.png" />
+    <link rel="mask-icon" href="/maskable-icon-512x512.png" color="#1e3a8a" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#1e3a8a" />
+    <meta name="msapplication-TileColor" content="#1e3a8a" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="preconnect" href="https://plus.unsplash.com" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://loft5.co.il/" />
+
+    <!-- CSS -->
     <link rel="stylesheet" href="/src/index.css" />
-    <title>לופט 5 - קצרין</title>
   </head>
   <body>
     <div id="root"></div>
