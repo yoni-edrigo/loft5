@@ -11,7 +11,7 @@ export const sendPushToTopic = action({
     body: v.string(),
     data: v.optional(v.any()),
   },
-  handler: async (ctx, args) => {
+  handler: async (_, args) => {
     try {
       // Ensure Firebase is initialized (this should be shared with send_push.ts)
       if (!admin.apps.length) {
