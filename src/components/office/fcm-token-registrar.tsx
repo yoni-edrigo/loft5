@@ -7,16 +7,23 @@ export function FcmTokenRegistrar() {
   const addFcmToken = useMutation(api.set_functions.addFcmToken);
 
   useEffect(() => {
-    if (Notification.permission !== "granted") {
-      void Notification.requestPermission();
-    }
-    void requestFCMToken().then((token) => {
-      if (token) {
-        void addFcmToken({ token });
-        console.log("FCM Token:", token);
+    async function setupFCM() {
+      if (Notification.permission !== "granted") {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") return;
       }
-    });
-  }, [addFcmToken]);
+
+      const existingToken = localStorage.getItem("fcm_token");
+      if (existingToken) return;
+
+      const token = await requestFCMToken();
+      if (token) {
+        await addFcmToken({ token });
+      }
+    }
+
+    setupFCM().catch(console.error);
+  }, []); // Remove addFcmToken from deps
 
   return null;
 }

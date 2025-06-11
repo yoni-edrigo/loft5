@@ -33,52 +33,118 @@ export const sendPushToAll = action({
     title: v.string(),
     body: v.string(),
   },
-  handler: async (
-    ctx,
-    args = { title: "Test", body: "This is a test notification" },
-  ) => {
-    // Use runQuery with the correct function reference from api
-    const tokens: FCMToken[] = await ctx.runQuery(
-      api.get_fcm_tokens.getAllFcmTokens,
-      {},
-    );
-    if (!tokens.length) return { success: false, message: "No tokens found" };
+  handler: async (ctx, args) => {
+    try {
+      // Get all FCM tokens
+      const tokens: FCMToken[] = await ctx.runQuery(
+        api.get_fcm_tokens.getAllFcmTokens,
+        {},
+      );
 
-    const messages = tokens.map((t: FCMToken) => ({
-      token: t.token,
-      notification: {
-        title: args.title,
-        body: args.body,
-      },
-      webpush: {
-        notification: {
-          icon: "/pwa-192x192.png",
-          badge: "/pwa-64x64.png",
-          image: "/pwa-512x512.png",
-        },
-      },
-    }));
-
-    // Send messages in batches
-    const responses = await Promise.allSettled(
-      messages.map((msg: admin.messaging.Message) =>
-        admin.messaging().send(msg),
-      ),
-    );
-
-    const invalidTokens: string[] = [];
-    responses.forEach((result, i) => {
-      if (
-        result.status === "rejected" &&
-        result.reason?.errorInfo?.code ===
-          "messaging/registration-token-not-registered"
-      ) {
-        invalidTokens.push(messages[i].token);
+      if (!tokens.length) {
+        return { success: false, message: "No tokens found" };
       }
-    });
 
-    // Optionally: remove invalidTokens from your fcmTokens table here
+      // Create messages with proper structure
+      const messages = tokens.map((t: FCMToken) => ({
+        token: t.token,
+        notification: {
+          title: args.title,
+          body: args.body,
+        },
+        webpush: {
+          notification: {
+            title: args.title, // Include title/body here too for web
+            body: args.body,
+            icon: "/pwa-192x192.png",
+            badge: "/pwa-64x64.png",
+            image: "/pwa-512x512.png",
+            requireInteraction: false,
+            silent: false,
+          },
+          fcm_options: {
+            link: "https://www.loft5.vip/office?tab=bookings", // Where to navigate when clicked
+          },
+        },
+        android: {
+          notification: {
+            icon: "/pwa-192x192.png",
+            image: "/pwa-512x512.png",
+          },
+          priority: "high" as const,
+        },
+        apns: {
+          payload: {
+            aps: {
+              badge: 1,
+              sound: "default",
+            },
+          },
+        },
+      }));
 
-    return { success: true, responses, invalidTokens };
+      // Send messages in batches of 500 (FCM limit)
+      const batchSize = 500;
+      const batches = [];
+      for (let i = 0; i < messages.length; i += batchSize) {
+        batches.push(messages.slice(i, i + batchSize));
+      }
+
+      const allResponses: admin.messaging.BatchResponse[] = [];
+      const invalidTokens: string[] = [];
+
+      for (const batch of batches) {
+        try {
+          const response = await admin.messaging().sendEach(batch);
+          allResponses.push(response);
+
+          // Collect invalid tokens
+          response.responses.forEach((result, i) => {
+            if (!result.success && result.error) {
+              const errorCode = result.error.code;
+              if (
+                errorCode === "messaging/registration-token-not-registered" ||
+                errorCode === "messaging/invalid-registration-token"
+              ) {
+                invalidTokens.push(batch[i].token);
+              }
+            }
+          });
+        } catch (error) {
+          console.error("Batch send failed:", error);
+        }
+      }
+
+      // TODO: Remove invalid tokens from your database
+      if (invalidTokens.length > 0) {
+        console.log(`Found ${invalidTokens.length} invalid tokens to remove`);
+        // You can add a mutation here to remove invalid tokens:
+        // await ctx.runMutation(api.get_fcm_tokens.removeInvalidTokens, { tokens: invalidTokens });
+      }
+
+      const totalSuccess = allResponses.reduce(
+        (sum, response) => sum + response.successCount,
+        0,
+      );
+      const totalFailure = allResponses.reduce(
+        (sum, response) => sum + response.failureCount,
+        0,
+      );
+
+      return {
+        success: true,
+        totalSent: tokens.length,
+        successCount: totalSuccess,
+        failureCount: totalFailure,
+        invalidTokens: invalidTokens.length,
+        responses: allResponses,
+      };
+    } catch (error) {
+      console.error("Push notification error:", error);
+      return {
+        success: false,
+        message: `Error sending notifications: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
   },
 });

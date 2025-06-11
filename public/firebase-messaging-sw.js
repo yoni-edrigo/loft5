@@ -17,34 +17,111 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-self.addEventListener("push", function (event) {
-  console.log("[Service Worker] Push event received", event);
-  const data = event.data ? event.data.json() : {};
-  console.log("[Service Worker] Push event data:", data);
-  const title = data.notification?.title || "Default Title";
-  const options = {
-    body: data.notification?.body || "Default body",
-    icon: "/pwa-192x192.png", // Add app icon
-    badge: "/pwa-64x64.png", // Add badge icon
-    // ...other options
-  };
-  console.log("[Service Worker] Showing notification:", title, options);
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
+// Use only Firebase's background message handler
 messaging.onBackgroundMessage(function (payload) {
-  console.log("[Service Worker] onBackgroundMessage received", payload);
-  const notificationTitle = payload.notification.title;
+  console.log("[Service Worker] Background message received:", payload);
+
+  // Extract notification data from the payload
+  const notificationTitle =
+    payload.notification?.title || payload.data?.title || "Loft5 Notification";
+  const notificationBody =
+    payload.notification?.body ||
+    payload.data?.body ||
+    "You have a new message";
+
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: "/pwa-192x192.png", // Add app icon
-    badge: "/pwa-64x64.png", // Add badge icon
-    // ...other options
+    body: notificationBody,
+    icon: payload.notification?.icon || "/pwa-192x192.png",
+    badge: payload.notification?.badge || "/pwa-64x64.png",
+    image: payload.notification?.image || "/pwa-512x512.png",
+    tag: payload.notification?.tag || "loft5-notification", // Prevents duplicate notifications
+    renotify: true, // Show even if tag already exists
+    requireInteraction: false, // Auto-dismiss after a few seconds
+    silent: false,
+    vibrate: [200, 100, 200], // Vibration pattern
+    data: {
+      url:
+        payload.fcmOptions?.link ||
+        payload.data?.click_action ||
+        "https://www.loft5.vip/",
+      timestamp: Date.now(),
+      ...payload.data, // Include any custom data
+    },
+    actions: [
+      {
+        action: "open",
+        title: "Open App",
+        icon: "/pwa-64x64.png",
+      },
+      {
+        action: "dismiss",
+        title: "Dismiss",
+        icon: "/pwa-64x64.png",
+      },
+    ],
   };
+
   console.log(
-    "[Service Worker] Showing background notification:",
+    "[Service Worker] Showing notification:",
     notificationTitle,
     notificationOptions,
   );
-  self.registration.showNotification(notificationTitle, notificationOptions);
+
+  return self.registration.showNotification(
+    notificationTitle,
+    notificationOptions,
+  );
+});
+
+// Handle notification clicks
+self.addEventListener("notificationclick", function (event) {
+  console.log("[Service Worker] Notification clicked:", event);
+
+  event.notification.close();
+
+  const action = event.action;
+  const notificationData = event.notification.data;
+
+  if (action === "dismiss") {
+    // Just close the notification
+    return;
+  }
+
+  // Default action or 'open' action - open the app
+  const urlToOpen = notificationData?.url || "https://www.loft5.vip/";
+
+  event.waitUntil(
+    clients
+      .matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      })
+      .then(function (clientList) {
+        // Check if app is already open
+        for (const client of clientList) {
+          if (client.url.includes("loft5.vip") && "focus" in client) {
+            console.log("[Service Worker] Focusing existing window");
+            return client.focus();
+          }
+        }
+
+        // Open new window if app not already open
+        if (clients.openWindow) {
+          console.log("[Service Worker] Opening new window:", urlToOpen);
+          return clients.openWindow(urlToOpen);
+        }
+      }),
+  );
+});
+
+// Handle notification close
+self.addEventListener("notificationclose", function (event) {
+  console.log("[Service Worker] Notification closed:", event);
+  // Optional: Send analytics about notification dismissal
+});
+
+// Optional: Handle push subscription changes
+self.addEventListener("pushsubscriptionchange", function (event) {
+  console.log("[Service Worker] Push subscription changed:", event);
+  // You might want to send the new subscription to your server
 });

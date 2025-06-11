@@ -1,6 +1,11 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
-import { toast } from "sonner"; // e.g., 'react-toastify'
+import {
+  getMessaging,
+  getToken,
+  onMessage,
+  type MessagePayload,
+} from "firebase/messaging";
+import { toast } from "sonner";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBcBA3jHHYAqS6VMp0kvp_J-Tfm_trapS8",
@@ -15,50 +20,245 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const messaging = getMessaging(app);
 
-export async function requestFCMToken() {
-  if (!("serviceWorker" in navigator)) {
-    console.error("Service workers are not supported in this browser.");
-    return null;
+// VAPID key for push notifications
+const VAPID_KEY =
+  "BFeHkcvZ31VmsxW0cbzS3BhKrtG2rWWbaKKcwU0DbV9B3xIvAHa94V2FyHakXffsr4ZXOR_NS_uWISUxCb6NbAc";
+
+// Check if notifications are supported
+export function isNotificationSupported(): boolean {
+  return "Notification" in window && "serviceWorker" in navigator;
+}
+
+// Request notification permission
+export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  if (!isNotificationSupported()) {
+    throw new Error("Notifications not supported in this browser");
   }
+
+  const permission = await Notification.requestPermission();
+  console.log("Notification permission:", permission);
+  return permission;
+}
+
+// Register service worker
+async function registerServiceWorker(): Promise<ServiceWorkerRegistration> {
   try {
-    // Explicitly register the Firebase service worker for FCM
     console.log("Registering service worker for FCM...");
     const registration = await navigator.serviceWorker.register(
       "/firebase-messaging-sw.js",
+      { scope: "/" },
     );
-    console.log("Service worker registration state:", registration);
+
+    // Wait for service worker to be ready
+    await navigator.serviceWorker.ready;
+    console.log("Service worker registered successfully:", registration);
+    return registration;
+  } catch (error) {
+    console.error("Service worker registration failed:", error);
+    throw error;
+  }
+}
+
+// Get FCM token
+export async function requestFCMToken(): Promise<string | null> {
+  if (!isNotificationSupported()) {
+    console.error("Notifications are not supported in this browser");
+    return null;
+  }
+
+  try {
+    // Check current permission status
+    let permission = Notification.permission;
+
+    // Request permission if not granted
+    if (permission === "default") {
+      permission = await requestNotificationPermission();
+    }
+
+    if (permission !== "granted") {
+      console.log("Notification permission denied");
+      toast.error("Notification permission required for push notifications");
+      return null;
+    }
+
+    // Register service worker
+    const registration = await registerServiceWorker();
+
+    // Get FCM token
     console.log("Requesting FCM token...");
     const token = await getToken(messaging, {
-      vapidKey:
-        "BFeHkcvZ31VmsxW0cbzS3BhKrtG2rWWbaKKcwU0DbV9B3xIvAHa94V2FyHakXffsr4ZXOR_NS_uWISUxCb6NbAc",
+      vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registration,
     });
+
     if (token) {
       console.log("FCM token obtained:", token);
+      return token;
     } else {
-      console.log("No FCM token received. User may have denied permission.");
+      console.log("No FCM token received");
+      toast.error("Failed to get notification token");
+      return null;
     }
-    return token;
-  } catch (err) {
-    console.error("FCM token error:", err);
+  } catch (error) {
+    console.error("Error getting FCM token:", error);
+    toast.error("Failed to setup push notifications");
     return null;
   }
 }
 
-onMessage(messaging, (payload) => {
+// Periodically check for token updates (Firebase v9+ handles refresh automatically)
+// Call this when app becomes active or periodically
+export async function checkTokenRefresh(): Promise<void> {
+  try {
+    if (!isNotificationSupported() || !isPushNotificationEnabled()) {
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    const currentToken = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration,
+    });
+
+    if (currentToken) {
+      const storedToken = localStorage.getItem("fcm_token");
+      if (storedToken !== currentToken) {
+        console.log("FCM token updated:", currentToken);
+        localStorage.setItem("fcm_token", currentToken);
+        // Token storage handled by FcmTokenRegistrar component
+      }
+    }
+  } catch (error) {
+    console.error("Error checking token refresh:", error);
+  }
+}
+
+// Handle foreground messages
+onMessage(messaging, (payload: MessagePayload) => {
   console.log("[FCM] Foreground message received:", payload);
-  let title, body;
-  if (payload.notification) {
-    title = payload.notification.title;
-    body = payload.notification.body;
-    console.log("[FCM] Showing toast with notification:", title, body);
-    toast.info(`${title}: ${body}`);
-  } else if (payload.data) {
-    title = payload.data.title || "(No title)";
-    body = payload.data.body || JSON.stringify(payload.data);
-    console.log("[FCM] Showing toast with data-only message:", title, body);
-    toast.info(`${title}: ${body}`);
-  } else {
-    console.log("[FCM] No notification or data in payload.", payload);
+
+  const title = payload.notification?.title || payload.data?.title || "Loft5";
+  const body =
+    payload.notification?.body || payload.data?.body || "New notification";
+  const icon = payload.notification?.icon || "/pwa-192x192.png";
+
+  // Show toast notification
+  toast.info(`${title}: ${body}`, {
+    duration: 5000,
+    action: {
+      label: "View",
+      onClick: (): void => {
+        // Handle notification click - navigate to relevant page
+        const url = payload.fcmOptions?.link || payload.data?.click_action;
+        if (url && typeof url === "string") {
+          window.open(url, "_blank");
+        }
+      },
+    },
+  });
+
+  // Optionally show browser notification even in foreground
+  if (Notification.permission === "granted") {
+    const notificationOptions: NotificationOptions = {
+      body,
+      icon,
+      badge: "/pwa-64x64.png",
+      tag: "loft5-foreground", // Prevents duplicates
+      silent: false,
+    };
+
+    const notification = new Notification(title, notificationOptions);
+
+    notification.onclick = (event: Event): void => {
+      event.preventDefault();
+      window.focus();
+      notification.close();
+      // Handle click action
+      const url = payload.fcmOptions?.link || payload.data?.click_action;
+      if (url && typeof url === "string") {
+        window.location.href = url;
+      }
+    };
+
+    // Auto-close after 5 seconds
+    void window.setTimeout(() => notification.close(), 5000);
   }
 });
+
+// Utility function to check if push notifications are enabled
+export function isPushNotificationEnabled(): boolean {
+  return Notification.permission === "granted";
+}
+
+// Utility function to get current notification permission
+export function getNotificationPermission(): NotificationPermission {
+  return Notification.permission;
+}
+
+// Function to disable notifications (remove token from backend)
+export async function disablePushNotifications(): Promise<void> {
+  try {
+    // Remove from localStorage
+    localStorage.removeItem("fcm_token");
+
+    // Token removal should be handled by your component/mutation
+    console.log(
+      "FCM token removed locally - handle backend removal in component",
+    );
+    toast.success("Push notifications disabled");
+  } catch (error) {
+    console.error("Failed to disable push notifications:", error);
+    toast.error("Failed to disable notifications");
+  }
+}
+
+// Initialize push notifications (call this when user logs in or on app start)
+export async function initializePushNotifications(): Promise<boolean> {
+  if (!isNotificationSupported()) {
+    console.log("Push notifications not supported");
+    return false;
+  }
+
+  try {
+    if (Notification.permission === "granted") {
+      const token = await requestFCMToken();
+      if (token) {
+        // Check for token updates periodically
+        window.setTimeout(() => void checkTokenRefresh(), 5000);
+        return true;
+      }
+    }
+  } catch (error) {
+    console.error("Failed to initialize push notifications:", error);
+  }
+
+  return false;
+}
+
+// Call this when app becomes visible again (for token refresh checking)
+export function setupTokenRefreshChecking(): () => void {
+  // Check token when page becomes visible
+  const handleVisibilityChange = (): void => {
+    if (!document.hidden && isPushNotificationEnabled()) {
+      void checkTokenRefresh();
+    }
+  };
+
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  // Check token periodically (every 24 hours)
+  const intervalId: number = window.setInterval(
+    () => {
+      if (isPushNotificationEnabled()) {
+        void checkTokenRefresh();
+      }
+    },
+    24 * 60 * 60 * 1000,
+  ); // 24 hours
+
+  // Return cleanup function for component unmounting
+  return (): void => {
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    window.clearInterval(intervalId);
+  };
+}
