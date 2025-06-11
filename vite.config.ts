@@ -17,7 +17,32 @@ export default defineConfig({
         name: "Loft5",
         short_name: "Loft5",
         description: "Loft5 Event Booking Progressive Web App",
-        theme_color: "#ffffff",
+        theme_color: "#000000",
+        categories: ["productivity", "business", "events", "booking"],
+        lang: "he-IL",
+        start_url: "/office",
+        scope: "/",
+        prefer_related_applications: false,
+        shortcuts: [
+          {
+            name: "Bookings",
+            short_name: "Bookings",
+            description: "View and manage your bookings",
+            url: "/office?tab=bookings",
+            icons: [
+              { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+            ],
+          },
+          {
+            name: "Events",
+            short_name: "Events",
+            description: "Explore upcoming events",
+            url: "/office?tab=events",
+            icons: [
+              { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+            ],
+          },
+        ],
         icons: [
           {
             src: "/pwa-64x64.png",
