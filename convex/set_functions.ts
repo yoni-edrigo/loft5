@@ -335,18 +335,21 @@ export const addFcmToken = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    // Upsert by userId: update if exists, else insert
-    const existing = await ctx.db
+    // Check if this token already exists for this user
+    const existingToken = await ctx.db
       .query("fcmTokens")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .withIndex("by_token", (q) => q.eq("token", args.token))
       .first();
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        token: args.token,
+
+    if (existingToken) {
+      // Token already exists, just update createdAt timestamp
+      await ctx.db.patch(existingToken._id, {
         createdAt: Date.now(),
       });
       return { success: true, updated: true };
     }
+
+    // Insert new token for this user
     await ctx.db.insert("fcmTokens", {
       token: args.token,
       userId,

@@ -140,49 +140,22 @@ onMessage(messaging, (payload: MessagePayload) => {
   const title = payload.notification?.title || payload.data?.title || "Loft5";
   const body =
     payload.notification?.body || payload.data?.body || "New notification";
-  const icon = payload.notification?.icon || "/pwa-192x192.png";
+  const url = payload.fcmOptions?.link || payload.data?.click_action;
 
-  // Show toast notification
+  // Show only toast notification when app is in foreground
+  // This prevents duplicate notifications
   toast.info(`${title}: ${body}`, {
     duration: 5000,
     action: {
       label: "View",
       onClick: (): void => {
         // Handle notification click - navigate to relevant page
-        const url = payload.fcmOptions?.link || payload.data?.click_action;
         if (url && typeof url === "string") {
           window.open(url, "_blank");
         }
       },
     },
   });
-
-  // Optionally show browser notification even in foreground
-  if (Notification.permission === "granted") {
-    const notificationOptions: NotificationOptions = {
-      body,
-      icon,
-      badge: "/pwa-64x64.png",
-      tag: "loft5-foreground", // Prevents duplicates
-      silent: false,
-    };
-
-    const notification = new Notification(title, notificationOptions);
-
-    notification.onclick = (event: Event): void => {
-      event.preventDefault();
-      window.focus();
-      notification.close();
-      // Handle click action
-      const url = payload.fcmOptions?.link || payload.data?.click_action;
-      if (url && typeof url === "string") {
-        window.location.href = url;
-      }
-    };
-
-    // Auto-close after 5 seconds
-    void window.setTimeout(() => notification.close(), 5000);
-  }
 });
 
 // Utility function to check if push notifications are enabled

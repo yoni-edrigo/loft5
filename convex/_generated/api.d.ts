@@ -21,6 +21,7 @@ import type * as seed from "../seed.js";
 import type * as send_push from "../send_push.js";
 import type * as set_fcm_token from "../set_fcm_token.js";
 import type * as set_functions from "../set_functions.js";
+import type * as topic_push from "../topic_push.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   send_push: typeof send_push;
   set_fcm_token: typeof set_fcm_token;
   set_functions: typeof set_functions;
+  topic_push: typeof topic_push;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

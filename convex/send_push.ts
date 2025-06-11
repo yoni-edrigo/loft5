@@ -43,34 +43,29 @@ export const sendPushToAll = action({
 
       if (!tokens.length) {
         return { success: false, message: "No tokens found" };
-      }
-
-      // Create messages with proper structure
+      } // Create messages with proper structure      // Create messages with data field only - no notification field to prevent duplicates
       const messages = tokens.map((t: FCMToken) => ({
         token: t.token,
-        notification: {
+        // Remove the notification field to prevent Firebase's automatic handling
+        // and rely only on our custom handler in the service worker
+        data: {
           title: args.title,
           body: args.body,
+          icon: "/pwa-192x192.png",
+          badge: "/pwa-64x64.png",
+          image: "/pwa-512x512.png",
+          url: "https://www.loft5.vip/office?tab=bookings",
+          timestamp: Date.now().toString(),
         },
         webpush: {
-          notification: {
-            title: args.title, // Include title/body here too for web
-            body: args.body,
-            icon: "/pwa-192x192.png",
-            badge: "/pwa-64x64.png",
-            image: "/pwa-512x512.png",
-            requireInteraction: false,
-            silent: false,
+          headers: {
+            TTL: "86400", // 24 hours in seconds
           },
           fcm_options: {
             link: "https://www.loft5.vip/office?tab=bookings", // Where to navigate when clicked
           },
         },
         android: {
-          notification: {
-            icon: "/pwa-192x192.png",
-            image: "/pwa-512x512.png",
-          },
           priority: "high" as const,
         },
         apns: {
@@ -78,7 +73,13 @@ export const sendPushToAll = action({
             aps: {
               badge: 1,
               sound: "default",
+              category: "NEW_BOOKING",
+              contentAvailable: true,
+              mutableContent: true,
             },
+          },
+          fcmOptions: {
+            imageUrl: "https://www.loft5.vip/pwa-512x512.png",
           },
         },
       }));
@@ -96,32 +97,50 @@ export const sendPushToAll = action({
       for (const batch of batches) {
         try {
           const response = await admin.messaging().sendEach(batch);
-          allResponses.push(response);
-
-          // Collect invalid tokens
+          allResponses.push(response); // Collect invalid tokens
           response.responses.forEach((result, i) => {
             if (!result.success && result.error) {
               const errorCode = result.error.code;
+              // Only remove tokens that are DEFINITELY invalid
+              // messaging/registration-token-not-registered means the token was once valid but is no longer registered
+              // messaging/invalid-registration-token means the token format is wrong
               if (
                 errorCode === "messaging/registration-token-not-registered" ||
                 errorCode === "messaging/invalid-registration-token"
               ) {
+                console.log(
+                  `Invalid token detected: ${batch[i].token}, reason: ${errorCode}`,
+                );
                 invalidTokens.push(batch[i].token);
+              } else {
+                // Log other errors but don't remove the token as it might be a temporary issue
+                console.log(
+                  `Message to ${batch[i].token} failed with error: ${errorCode}, but token not marked for removal`,
+                );
               }
             }
           });
         } catch (error) {
           console.error("Batch send failed:", error);
         }
-      }
-
-      // TODO: Remove invalid tokens from your database
+      } // Remove invalid tokens from your database
       if (invalidTokens.length > 0) {
         console.log(`Found ${invalidTokens.length} invalid tokens to remove`);
-        // You can add a mutation here to remove invalid tokens:
-        // await ctx.runMutation(api.get_fcm_tokens.removeInvalidTokens, { tokens: invalidTokens });
+        try {
+          const result = await ctx.runMutation(
+            api.get_fcm_tokens.removeInvalidTokens,
+            {
+              tokens: invalidTokens,
+            },
+          );
+          console.log("Token cleanup result:", JSON.stringify(result));
+        } catch (error) {
+          console.error(
+            "Failed to remove invalid tokens:",
+            error instanceof Error ? error.message : String(error),
+          );
+        }
       }
-
       const totalSuccess = allResponses.reduce(
         (sum, response) => sum + response.successCount,
         0,
@@ -129,15 +148,28 @@ export const sendPushToAll = action({
       const totalFailure = allResponses.reduce(
         (sum, response) => sum + response.failureCount,
         0,
-      );
-
+      ); // Don't return the entire response objects as they contain Error objects that Convex can't serialize
       return {
         success: true,
         totalSent: tokens.length,
         successCount: totalSuccess,
         failureCount: totalFailure,
         invalidTokens: invalidTokens.length,
-        responses: allResponses,
+        // Include a serializable summary instead of raw response objects
+        summary: allResponses.map((response) => ({
+          successCount: response.successCount,
+          failureCount: response.failureCount,
+        })),
+        // Add more detailed diagnostics
+        diagnostics: {
+          batchCount: batches.length,
+          messagesPerBatch: batches.map((b) => b.length),
+          invalidTokenCount: invalidTokens.length,
+          // Only include first 10 chars of tokens for privacy
+          invalidTokenPrefixes: invalidTokens.map(
+            (t) => t.substring(0, 10) + "...",
+          ),
+        },
       };
     } catch (error) {
       console.error("Push notification error:", error);
