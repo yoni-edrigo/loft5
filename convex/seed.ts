@@ -135,14 +135,13 @@ export const seedDatabase = mutation({
         createdAt: Date.now(),
         // This booking is not yet approved
       },
-    ];
-
-    // Insert bookings and update availability slots
+    ]; // Insert bookings and update availability slots
     for (const booking of sampleBookings) {
       const bookingId = await ctx.db.insert("bookings", booking);
       const availabilityId = availabilityMap.get(booking.eventDate);
 
-      if (availabilityId) {
+      // Only link to availability if the booking is approved
+      if (availabilityId && booking.approvedAt) {
         const availability = await ctx.db.get(availabilityId);
         if (availability) {
           // Update the corresponding time slot with the booking ID

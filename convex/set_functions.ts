@@ -86,7 +86,6 @@ export const createBooking = mutation({
       console.log("ERROR: Date not available for:", args.eventDate);
       throw new Error("Date not available");
     }
-
     const timeSlotAvailable = availability.timeSlots.find(
       (slot) => slot.slot === args.timeSlot && !slot.bookingId,
     );
@@ -95,6 +94,7 @@ export const createBooking = mutation({
 
     if (!timeSlotAvailable) {
       console.log("ERROR: Time slot not available for:", args.timeSlot);
+      console.log("Time slot is already taken by an approved booking");
       throw new Error("Time slot not available");
     }
 
@@ -133,13 +133,15 @@ export const createBooking = mutation({
       "Booking data to insert:",
       JSON.stringify(bookingData, null, 2),
     );
+    const bookingId = await ctx.db.insert("bookings", bookingData);
 
-    const bookingId = await ctx.db.insert("bookings", bookingData); // Mark time slot as booked by linking it to the booking
-    await ctx.db.patch(availability._id, {
-      timeSlots: availability.timeSlots.map((slot) =>
-        slot.slot === args.timeSlot ? { ...slot, bookingId } : slot,
-      ),
-    });
+    // DON'T mark time slot as booked immediately - only mark when approved
+    // This allows multiple pending bookings for the same slot
+    // await ctx.db.patch(availability._id, {
+    //   timeSlots: availability.timeSlots.map((slot) =>
+    //     slot.slot === args.timeSlot ? { ...slot, bookingId } : slot,
+    //   ),
+    // });
 
     // Send push notification about the new booking
     try {
@@ -175,18 +177,20 @@ export const cancelBooking = mutation({
     const booking = await ctx.db.get(args.id);
     if (!booking) throw new Error("Booking not found");
 
-    // Free up the time slot by removing the bookingId
-    const availability = await ctx.db
-      .query("availability")
-      .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
-      .first();
+    // Only free up the time slot if the booking was approved (and thus linked to availability)
+    if (booking.approvedAt) {
+      const availability = await ctx.db
+        .query("availability")
+        .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
+        .first();
 
-    if (availability) {
-      await ctx.db.patch(availability._id, {
-        timeSlots: availability.timeSlots.map((slot) =>
-          slot.slot === booking.timeSlot ? { slot: slot.slot } : slot,
-        ),
-      });
+      if (availability) {
+        await ctx.db.patch(availability._id, {
+          timeSlots: availability.timeSlots.map((slot) =>
+            slot.slot === booking.timeSlot ? { slot: slot.slot } : slot,
+          ),
+        });
+      }
     }
 
     // Delete booking
@@ -336,6 +340,22 @@ export const approveBooking = mutation({
         : {}),
     });
 
+    // NOW mark the time slot as booked by linking it to the approved booking
+    const availability = await ctx.db
+      .query("availability")
+      .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
+      .first();
+
+    if (availability) {
+      await ctx.db.patch(availability._id, {
+        timeSlots: availability.timeSlots.map((slot) =>
+          slot.slot === booking.timeSlot
+            ? { ...slot, bookingId: args.id }
+            : slot,
+        ),
+      });
+    }
+
     return { success: true };
   },
 });
@@ -352,19 +372,8 @@ export const declineBooking = mutation({
       declinedAt: Date.now(),
     });
 
-    // Free up the time slot
-    const availability = await ctx.db
-      .query("availability")
-      .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
-      .first();
-
-    if (availability) {
-      await ctx.db.patch(availability._id, {
-        timeSlots: availability.timeSlots.map((slot) =>
-          slot.slot === booking.timeSlot ? { slot: slot.slot } : slot,
-        ),
-      });
-    }
+    // No need to free up time slot since it was never blocked for pending bookings
+    // The time slot is only blocked when booking is approved
 
     return { success: true };
   },
