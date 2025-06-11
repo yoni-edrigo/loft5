@@ -12,6 +12,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: "auto",
       manifest: {
         name: "Loft5",
         short_name: "Loft5",
@@ -55,6 +56,13 @@ export default defineConfig({
             form_factor: "wide",
           },
         ],
+      },
+      // Add workbox configuration to handle firebase messaging
+      workbox: {
+        // Ensure firebase messaging service worker is imported
+        importScripts: ["firebase-messaging-sw.js"],
+        // Don't precache the firebase messaging service worker
+        globIgnores: ["**/firebase-messaging-sw.js"],
       },
     }),
   ],

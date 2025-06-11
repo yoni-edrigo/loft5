@@ -43,7 +43,17 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 // Register service worker
 async function registerServiceWorker(): Promise<ServiceWorkerRegistration> {
   try {
-    console.log("Registering service worker for FCM...");
+    console.log("Getting service worker registration for FCM...");
+
+    // First check if we already have an active service worker
+    const existingReg = await navigator.serviceWorker.getRegistration();
+    if (existingReg) {
+      console.log("Using existing service worker registration:", existingReg);
+      return existingReg;
+    }
+
+    // If no service worker found, register our Firebase service worker
+    console.log("Registering Firebase messaging service worker...");
     const registration = await navigator.serviceWorker.register(
       "/firebase-messaging-sw.js",
       { scope: "/" },
