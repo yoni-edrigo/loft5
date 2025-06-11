@@ -139,7 +139,7 @@ export const unsubscribeFromTopic = action({
     topic: v.string(),
     tokens: v.array(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (_, args) => {
     try {
       if (!admin.apps.length) {
         // Initialize Firebase if not already initialized
