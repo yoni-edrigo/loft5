@@ -80,32 +80,28 @@ export default function BookingCalendar() {
           className={`
           text-sm sm:text-base md:text-lg font-medium
           ${isToday(day) ? "text-primary font-bold" : ""}
-          ${isPast ? "text-muted-foreground/50" : ""}
-          ${!available && !isPast ? "text-red-500" : ""}
+          ${isPast ? "text-muted-foreground" : ""}
+          ${!available && !isPast ? "text-status-unavailable" : ""}
           ${isSelected ? "text-secondary" : ""}
         `}
         >
           {format(day, "d")}
-        </span>
-
+        </span>{" "}
         {!isPast && available && (
-          <span className="text-[8px] sm:text-[10px] md:text-xs mt-0.5 sm:mt-1 text-green-600">
+          <span className="text-[8px] sm:text-[10px] md:text-xs mt-0.5 sm:mt-1 text-status-available">
             {slots.filter((s) => !s.bookingId).length === 2 ? "פנוי" : "חלקי"}
           </span>
         )}
-
         {!isPast && !available && (
-          <span className="text-[8px] sm:text-[10px] md:text-xs mt-0.5 sm:mt-1 text-red-500">
+          <span className="text-[8px] sm:text-[10px] md:text-xs mt-0.5 sm:mt-1 text-status-unavailable">
             תפוס
           </span>
         )}
-
         {isPast && (
-          <span className="text-[8px] sm:text-[10px] md:text-xs mt-0.5 sm:mt-1 text-muted-foreground/50">
+          <span className="text-[8px] sm:text-[10px] md:text-xs mt-0.5 sm:mt-1 text-muted-foreground">
             עבר
           </span>
         )}
-
         {isSelected && (
           <motion.div
             layoutId="selected-date"
@@ -113,7 +109,6 @@ export default function BookingCalendar() {
             transition={{ duration: 0.3 }}
           />
         )}
-
         {isHovered && available && !isPast && !isSelected && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -124,12 +119,23 @@ export default function BookingCalendar() {
       </>
     );
   };
-
   const renderFooter = () => {
     const legendItems = [
-      { color: "bg-green-100", label: "פנוי", textColor: "text-green-600" },
-      { color: "bg-yellow-100", label: "חלקי", textColor: "text-yellow-600" },
-      { color: "bg-red-100", label: "תפוס", textColor: "text-red-500" },
+      {
+        color: "bg-legend-available",
+        label: "פנוי",
+        textColor: "text-status-available",
+      },
+      {
+        color: "bg-legend-partial",
+        label: "חלקי",
+        textColor: "text-status-partial",
+      },
+      {
+        color: "bg-legend-unavailable",
+        label: "תפוס",
+        textColor: "text-status-unavailable",
+      },
       {
         color: "border-2 border-secondary",
         label: "נבחר",
@@ -217,7 +223,6 @@ export default function BookingCalendar() {
           selectedDate={selectedDate}
         />
       </motion.div>
-
       {/* Time slot selection - Desktop */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -227,7 +232,6 @@ export default function BookingCalendar() {
       >
         {renderTimeSlots()}
       </motion.div>
-
       {/* Mobile Time Slot Sidebar */}
       <AnimatePresence>
         {showMobileSidebar && (
@@ -240,10 +244,11 @@ export default function BookingCalendar() {
           >
             <div className="flex flex-col h-full">
               <div className="p-4 bg-primary text-primary-foreground flex justify-between items-center">
-                <h2 className="text-lg font-bold">בחר שעות</h2>
+                <h2 className="text-lg font-bold">בחר שעות</h2>{" "}
                 <button
                   onClick={() => setShowMobileSidebar(false)}
                   className="p-2 rounded-full hover:bg-primary-foreground/10"
+                  aria-label="סגור בחירת שעות"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -264,8 +269,7 @@ export default function BookingCalendar() {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
-
+      </AnimatePresence>{" "}
       {/* Overlay for mobile sidebar */}
       <AnimatePresence>
         {showMobileSidebar && (
@@ -275,6 +279,15 @@ export default function BookingCalendar() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/30 z-40 md:hidden"
             onClick={() => setShowMobileSidebar(false)}
+            role="button"
+            aria-label="סגור תפריט בחירת שעות"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowMobileSidebar(false);
+              }
+            }}
           />
         )}
       </AnimatePresence>

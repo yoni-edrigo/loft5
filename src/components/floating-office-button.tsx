@@ -23,8 +23,11 @@ export default function FloatingOfficeButton() {
           className="flex items-center justify-center w-14 h-14 rounded-full bg-secondary text-secondary-foreground shadow-lg cursor-pointer"
           onClick={handleClick}
           whileHover={{ scale: 1.1 }}
+          aria-label="Office Management - Navigate to office management page"
+          title="Office Management - Navigate to office management page"
         >
-          <Briefcase className="h-6 w-6" />
+          <Briefcase className="h-6 w-6" aria-hidden="true" />
+          <span className="sr-only">Office Management</span>
         </motion.button>
 
         <AnimatePresence>

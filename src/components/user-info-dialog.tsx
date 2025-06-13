@@ -217,7 +217,7 @@ export function UserInfoDialog({ open, onOpenChange }: UserInfoDialogProps) {
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CheckCircle className="h-5 w-5 text-status-available" />
                 ההזמנה התקבלה!
               </DialogTitle>
               <DialogDescription className="text-start">

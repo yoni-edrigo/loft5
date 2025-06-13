@@ -246,7 +246,7 @@ export function BookingManager() {
                         </TableCell>
                         <TableCell>
                           {booking.paidAt ? (
-                            <Badge className="bg-green-500 text-white">
+                            <Badge className="bg-status-available text-white">
                               שולם
                             </Badge>
                           ) : (
