@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { Link } from "@tanstack/react-router";
 
 export default function Footer() {
   const { theme } = useTheme();
@@ -50,10 +51,27 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-gray-700 mt-8 pt-6 text-center">
-          <p>
-            © {currentYear} {loftName}. כל הזכויות שמורות.
-          </p>
+        <div className="border-t border-gray-700 mt-8 pt-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-center sm:text-right">
+              © {currentYear} {loftName}. כל הזכויות שמורות.
+            </p>
+
+            <div className="flex gap-4 text-sm">
+              <Link
+                to="/terms"
+                className={`${footerLinkClass} hover:underline`}
+              >
+                תקנון אתר
+              </Link>
+              <Link
+                to="/accessibility"
+                className={`${footerLinkClass} hover:underline`}
+              >
+                מדיניות נגישות
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

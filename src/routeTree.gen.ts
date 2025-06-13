@@ -11,14 +11,28 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as TermsImport } from './routes/terms'
 import { Route as OfficeImport } from './routes/office'
+import { Route as AccessibilityImport } from './routes/accessibility'
 import { Route as IndexImport } from './routes/index'
 
 // Create/Update Routes
 
+const TermsRoute = TermsImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const OfficeRoute = OfficeImport.update({
   id: '/office',
   path: '/office',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AccessibilityRoute = AccessibilityImport.update({
+  id: '/accessibility',
+  path: '/accessibility',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -39,11 +53,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/accessibility': {
+      id: '/accessibility'
+      path: '/accessibility'
+      fullPath: '/accessibility'
+      preLoaderRoute: typeof AccessibilityImport
+      parentRoute: typeof rootRoute
+    }
     '/office': {
       id: '/office'
       path: '/office'
       fullPath: '/office'
       preLoaderRoute: typeof OfficeImport
+      parentRoute: typeof rootRoute
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsImport
       parentRoute: typeof rootRoute
     }
   }
@@ -53,37 +81,47 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accessibility': typeof AccessibilityRoute
   '/office': typeof OfficeRoute
+  '/terms': typeof TermsRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accessibility': typeof AccessibilityRoute
   '/office': typeof OfficeRoute
+  '/terms': typeof TermsRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/accessibility': typeof AccessibilityRoute
   '/office': typeof OfficeRoute
+  '/terms': typeof TermsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/office'
+  fullPaths: '/' | '/accessibility' | '/office' | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/office'
-  id: '__root__' | '/' | '/office'
+  to: '/' | '/accessibility' | '/office' | '/terms'
+  id: '__root__' | '/' | '/accessibility' | '/office' | '/terms'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccessibilityRoute: typeof AccessibilityRoute
   OfficeRoute: typeof OfficeRoute
+  TermsRoute: typeof TermsRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccessibilityRoute: AccessibilityRoute,
   OfficeRoute: OfficeRoute,
+  TermsRoute: TermsRoute,
 }
 
 export const routeTree = rootRoute
@@ -97,14 +135,22 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/office"
+        "/accessibility",
+        "/office",
+        "/terms"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
+    "/accessibility": {
+      "filePath": "accessibility.tsx"
+    },
     "/office": {
       "filePath": "office.tsx"
+    },
+    "/terms": {
+      "filePath": "terms.tsx"
     }
   }
 }
