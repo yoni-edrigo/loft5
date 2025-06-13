@@ -14,8 +14,8 @@ export default function Footer() {
   const footerTextClass = theme === "dark" ? "text-gray-300" : "text-gray-600";
   const footerLinkClass =
     theme === "dark"
-      ? "text-white hover:text-secondary"
-      : "text-primary hover:text-secondary";
+      ? "text-white hover:text-blue-300"
+      : "text-primary hover:text-blue-600";
 
   return (
     <footer className={`py-10 ${footerBgClass} ${footerTextClass}`}>

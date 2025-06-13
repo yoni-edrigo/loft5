@@ -1,25 +1,25 @@
-"use client"
+"use client";
 
-import { motion, AnimatePresence } from "framer-motion"
-import { format } from "date-fns"
-import { he } from "date-fns/locale"
-import { Clock } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
+import { he } from "date-fns/locale";
+import { Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface TimeSlotSelectorProps {
-  date: Date | null
-  availableSlots: string[]
-  onTimeSlotSelect: (timeSlot: any) => void
-  onAvailableSlotSelect: (slotRange: string) => void
-  selectedTimeSlot: any | null
-  customStartTime: string
-  customEndTime: string
-  onCustomStartTimeChange: (value: string) => void
-  onCustomEndTimeChange: (value: string) => void
-  timeSlots: any[]
-  className?: string
+  date: Date | null;
+  availableSlots: string[];
+  onTimeSlotSelect: (timeSlot: any) => void;
+  onAvailableSlotSelect: (slotRange: string) => void;
+  selectedTimeSlot: any | null;
+  customStartTime: string;
+  customEndTime: string;
+  onCustomStartTimeChange: (value: string) => void;
+  onCustomEndTimeChange: (value: string) => void;
+  timeSlots: any[];
+  className?: string;
 }
 
 export default function TimeSlotSelector({
@@ -36,7 +36,9 @@ export default function TimeSlotSelector({
   className = "",
 }: TimeSlotSelectorProps) {
   return (
-    <div className={`bg-white rounded-xl shadow-xl overflow-hidden ${className}`}>
+    <div
+      className={`bg-white rounded-xl shadow-xl overflow-hidden ${className}`}
+    >
       <div className="p-4 sm:p-6 bg-primary text-primary-foreground">
         <div className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
@@ -49,12 +51,16 @@ export default function TimeSlotSelector({
           <>
             <div className="text-center mb-4">
               <h3 className="font-medium">שעות פנויות לתאריך</h3>
-              <p className="text-secondary font-bold">{format(date, "dd/MM/yyyy", { locale: he })}</p>
+              <p className="text-primary font-bold">
+                {format(date, "dd/MM/yyyy", { locale: he })}
+              </p>
             </div>
 
             {availableSlots.length > 0 ? (
               <div className="space-y-2">
-                <h3 className="font-medium text-sm sm:text-base">שעות פנויות</h3>
+                <h3 className="font-medium text-sm sm:text-base">
+                  שעות פנויות
+                </h3>
                 <div className="grid grid-cols-1 gap-2">
                   {availableSlots.map((slot, index) => (
                     <Button
@@ -77,9 +83,13 @@ export default function TimeSlotSelector({
             <div className="space-y-2 sm:space-y-3">
               <h3 className="font-medium text-sm sm:text-base">התאמה אישית</h3>
               <Button
-                variant={selectedTimeSlot?.id === "custom" ? "default" : "outline"}
+                variant={
+                  selectedTimeSlot?.id === "custom" ? "default" : "outline"
+                }
                 className={`w-full justify-center h-12 sm:h-10 text-sm sm:text-base ${
-                  selectedTimeSlot?.id === "custom" ? "bg-secondary text-secondary-foreground" : ""
+                  selectedTimeSlot?.id === "custom"
+                    ? "bg-secondary text-secondary-foreground"
+                    : ""
                 }`}
                 onClick={() => onTimeSlotSelect(timeSlots[3])}
               >
@@ -103,7 +113,9 @@ export default function TimeSlotSelector({
                           id="startTime"
                           type="time"
                           value={customStartTime}
-                          onChange={(e) => onCustomStartTimeChange(e.target.value)}
+                          onChange={(e) =>
+                            onCustomStartTimeChange(e.target.value)
+                          }
                           className="h-10"
                         />
                       </div>
@@ -115,7 +127,9 @@ export default function TimeSlotSelector({
                           id="endTime"
                           type="time"
                           value={customEndTime}
-                          onChange={(e) => onCustomEndTimeChange(e.target.value)}
+                          onChange={(e) =>
+                            onCustomEndTimeChange(e.target.value)
+                          }
                           className="h-10"
                         />
                       </div>
@@ -137,7 +151,11 @@ export default function TimeSlotSelector({
             <div className="p-3 sm:p-4 bg-muted rounded-md space-y-2 text-sm sm:text-base">
               <div className="flex justify-between">
                 <span>תאריך:</span>
-                <span className="font-medium">{date ? format(date, "dd/MM/yyyy", { locale: he }) : "לא נבחר"}</span>
+                <span className="font-medium">
+                  {date
+                    ? format(date, "dd/MM/yyyy", { locale: he })
+                    : "לא נבחר"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>שעות:</span>
@@ -154,5 +172,5 @@ export default function TimeSlotSelector({
         </div>
       </div>
     </div>
-  )
+  );
 }

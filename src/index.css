@@ -124,6 +124,23 @@
     outline: 2px solid oklch(var(--ring));
     outline-offset: 2px;
   }
+
+  /* Accessible text colors for better contrast compliance */
+  .text-secondary-accessible {
+    color: oklch(
+      45% 0.15 43
+    ); /* Darker yellow for better contrast on light backgrounds */
+  }
+
+  .dark .text-secondary-accessible {
+    color: oklch(75% 0.15 43); /* Lighter yellow for dark backgrounds */
+  }
+
+  /* Alternative selected text styling with better contrast */
+  .text-selected {
+    color: oklch(var(--primary));
+    font-weight: 600;
+  }
 }
 
 @layer base {
@@ -138,10 +155,12 @@
     --primary-foreground: oklch(
       98% 0.02 210
     ); /* ~ HSL 210 40% 98% (near white) */
-    --secondary: oklch(75% 0.18 43); /* ~ HSL 43 96% 56% (yellow) */
+    --secondary: oklch(
+      55% 0.15 43
+    ); /* ~ HSL 43 85% 40% (darker yellow for better contrast) */
     --secondary-foreground: oklch(
-      30% 0.05 222.2
-    ); /* ~ HSL 222.2 47.4% 11.2% (dark blue) */
+      98% 0.02 210
+    ); /* ~ HSL 210 40% 98% (white text for better contrast) */
     --muted: oklch(96% 0.02 210); /* ~ HSL 210 40% 96.1% (light blue-gray) */
     --muted-foreground: oklch(
       45% 0.03 215.4
@@ -174,8 +193,12 @@
     --popover-foreground: oklch(98% 0.02 210); /* ~ HSL 210 40% 98% */
     --primary: oklch(50% 0.15 221); /* ~ HSL 221 57% 33% */
     --primary-foreground: oklch(98% 0.02 210); /* ~ HSL 210 40% 98% */
-    --secondary: oklch(75% 0.18 43); /* ~ HSL 43 96% 56% */
-    --secondary-foreground: oklch(30% 0.05 222.2); /* ~ HSL 222.2 47.4% 11.2% */
+    --secondary: oklch(
+      65% 0.15 43
+    ); /* ~ HSL 43 85% 50% (darker yellow for dark mode with better contrast) */
+    --secondary-foreground: oklch(
+      20% 0.05 222.2
+    ); /* ~ HSL 222.2 47.4% 11.2% (dark text for contrast) */
     --muted: oklch(35% 0.04 217.2); /* ~ HSL 217.2 32.6% 17.5% (dark gray) */
     --muted-foreground: oklch(
       70% 0.03 215

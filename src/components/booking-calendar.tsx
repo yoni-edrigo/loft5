@@ -82,7 +82,7 @@ export default function BookingCalendar() {
           ${isToday(day) ? "text-primary font-bold" : ""}
           ${isPast ? "text-muted-foreground" : ""}
           ${!available && !isPast ? "text-status-unavailable" : ""}
-          ${isSelected ? "text-secondary" : ""}
+          ${isSelected ? "text-primary font-bold" : ""}
         `}
         >
           {format(day, "d")}
@@ -139,7 +139,7 @@ export default function BookingCalendar() {
       {
         color: "border-2 border-secondary",
         label: "נבחר",
-        textColor: "text-secondary",
+        textColor: "text-primary",
       },
     ];
 
