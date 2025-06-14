@@ -23,8 +23,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <h3 className="text-xl font-bold mb-4">{loftName}</h3>
-            <p className="mb-2">{"רחוב הדוגמה 5, תל אביב"}</p>
-            <p className="mb-2">{"03-1234567"}</p>
+            <p className="mb-2">{'רחוב 8, א"ת קצרין'}</p>
+            <p className="mb-2">{"052-440-0382"}</p>
             <p>{"info@loft5.co.il"}</p>
           </div>
 
@@ -43,9 +43,6 @@ export default function Footer() {
               </a>
               <a href="#" className={`${footerLinkClass}`}>
                 אינסטגרם
-              </a>
-              <a href="#" className={`${footerLinkClass}`}>
-                טוויטר
               </a>
             </div>
           </div>

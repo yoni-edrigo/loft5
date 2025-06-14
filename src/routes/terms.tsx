@@ -115,13 +115,13 @@ function TermsComponent() {
               <p>לשאלות או הבהרות בנוגע לתקנון זה, ניתן לפנות אלינו:</p>
               <div className="mt-4">
                 <p>
-                  <strong>טלפון:</strong> 03-1234567
+                  <strong>טלפון:</strong> 052-440-0382
                 </p>
                 <p>
                   <strong>אימייל:</strong> info@loft5.co.il
                 </p>
                 <p>
-                  <strong>כתובת:</strong> רחוב הדוגמה 5, תל אביב
+                  <strong>כתובת:</strong> רחוב 8, א"ת קצרין
                 </p>
               </div>
             </section>

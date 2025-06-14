@@ -33,8 +33,8 @@ describe("Footer Component", () => {
     renderWithTheme();
 
     expect(screen.getByText("לופט 5")).toBeInTheDocument();
-    expect(screen.getByText("רחוב הדוגמה 5, תל אביב")).toBeInTheDocument();
-    expect(screen.getByText("03-1234567")).toBeInTheDocument();
+    expect(screen.getByText('רחוב 8, א"ת קצרין')).toBeInTheDocument();
+    expect(screen.getByText("052-440-0382")).toBeInTheDocument();
     expect(screen.getByText("info@loft5.co.il")).toBeInTheDocument();
   });
   it("displays navigation links", () => {

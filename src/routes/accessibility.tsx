@@ -194,13 +194,13 @@ function AccessibilityComponent() {
               <div className="bg-muted p-4 rounded-lg">
                 <h3 className="font-semibold mb-2">רכז נגישות</h3>
                 <p>
-                  <strong>טלפון:</strong> 03-1234567
+                  <strong>טלפון:</strong> 052-440-0382
                 </p>
                 <p>
                   <strong>אימייל:</strong> accessibility@loft5.co.il
                 </p>
                 <p>
-                  <strong>כתובת:</strong> רחוב הדוגמה 5, תל אביב
+                  <strong>כתובת:</strong> רחוב 8, א"ת קצרין
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
                   אנו מתחייבים להשיב תוך 48 שעות ולפתור בעיות נגישות בהקדם
