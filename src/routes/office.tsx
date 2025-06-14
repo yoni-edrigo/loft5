@@ -26,38 +26,44 @@ function RouteComponent() {
   return (
     <>
       <Authenticated>
-        <FcmTokenRegistrar />
-        <Tabs
-          value={tab}
-          onValueChange={(value) => {
-            void navigate({
-              to: "/office",
-              search: { tab: value },
-            });
-          }}
-          className="space-y-4"
-          dir="rtl"
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="bookings">הזמנות</TabsTrigger>
-            <TabsTrigger value="pricing">מחירים</TabsTrigger>
-          </TabsList>
-          <TabsContent
-            value="bookings"
-            className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
+        <div className="container mx-auto py-8 px-4">
+          <h1 className="text-3xl font-bold text-center mb-8">ניהול המשרד</h1>
+          <FcmTokenRegistrar />
+          <Tabs
+            value={tab}
+            onValueChange={(value) => {
+              void navigate({
+                to: "/office",
+                search: { tab: value },
+              });
+            }}
+            className="space-y-4"
+            dir="rtl"
           >
-            <BookingManager />
-          </TabsContent>
-          <TabsContent
-            value="pricing"
-            className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
-          >
-            <PricingControl />
-          </TabsContent>
-        </Tabs>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="bookings">הזמנות</TabsTrigger>
+              <TabsTrigger value="pricing">מחירים</TabsTrigger>
+            </TabsList>
+            <TabsContent
+              value="bookings"
+              className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
+            >
+              <BookingManager />
+            </TabsContent>
+            <TabsContent
+              value="pricing"
+              className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
+            >
+              <PricingControl />
+            </TabsContent>
+          </Tabs>
+        </div>
       </Authenticated>
       <Unauthenticated>
-        <SignInForm />
+        <div className="container mx-auto py-8 px-4">
+          <h1 className="text-3xl font-bold text-center mb-8">התחברות למשרד</h1>
+          <SignInForm />
+        </div>
       </Unauthenticated>
     </>
   );

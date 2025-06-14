@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -18,12 +18,11 @@ function TermsComponent() {
             חזרה לעמוד הבית
           </Button>
         </Link>
-      </div>
-
+      </div>{" "}
+      <h1 className="text-4xl font-bold text-center mb-8">תקנון אתר</h1>
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl text-center">תקנון אתר</CardTitle>
-          <p className="text-center text-muted-foreground">
+          <p className="text-center text-muted-foreground text-lg">
             תקנון שימוש באתר לופט 5
           </p>
         </CardHeader>

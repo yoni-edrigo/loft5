@@ -156,8 +156,8 @@
       98% 0.02 210
     ); /* ~ HSL 210 40% 98% (near white) */
     --secondary: oklch(
-      55% 0.15 43
-    ); /* ~ HSL 43 85% 40% (darker yellow for better contrast) */
+      45% 0.15 43
+    ); /* ~ HSL 43 85% 30% (even darker yellow for better contrast) */
     --secondary-foreground: oklch(
       98% 0.02 210
     ); /* ~ HSL 210 40% 98% (white text for better contrast) */

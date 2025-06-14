@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, CheckCircle, Eye, Keyboard, Users } from "lucide-react";
@@ -19,12 +19,11 @@ function AccessibilityComponent() {
             חזרה לעמוד הבית
           </Button>
         </Link>
-      </div>
-
+      </div>{" "}
+      <h1 className="text-4xl font-bold text-center mb-8">מדיניות נגישות</h1>
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl text-center">מדיניות נגישות</CardTitle>
-          <p className="text-center text-muted-foreground">
+          <p className="text-center text-muted-foreground text-lg">
             מחויבותנו לנגישות דיגיטלית ושוויון הזדמנויות
           </p>
         </CardHeader>
