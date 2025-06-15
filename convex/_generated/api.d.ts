@@ -17,6 +17,8 @@ import type * as auth from "../auth.js";
 import type * as get_fcm_tokens from "../get_fcm_tokens.js";
 import type * as get_functions from "../get_functions.js";
 import type * as http from "../http.js";
+import type * as office_images from "../office_images.js";
+import type * as office_images_admin from "../office_images_admin.js";
 import type * as seed from "../seed.js";
 import type * as send_push from "../send_push.js";
 import type * as services from "../services.js";
@@ -37,6 +39,8 @@ declare const fullApi: ApiFromModules<{
   get_fcm_tokens: typeof get_fcm_tokens;
   get_functions: typeof get_functions;
   http: typeof http;
+  office_images: typeof office_images;
+  office_images_admin: typeof office_images_admin;
   seed: typeof seed;
   send_push: typeof send_push;
   services: typeof services;

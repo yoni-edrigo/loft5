@@ -250,3 +250,47 @@ export const seedServices = mutation({
     };
   },
 });
+
+export const seedOfficeImagesWithExternalUrls = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Remove all existing officeImages
+    const images = await ctx.db.query("officeImages").collect();
+    for (const img of images) {
+      await ctx.db.delete(img._id);
+    }
+    // External URLs from hero and gallery
+    const urls = [
+      {
+        url: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?q=80&w=2070&auto=format&fit=crop",
+        alt: "אירוע חגיגי עם אנשים מרימים כוסות",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=2070&auto=format&fit=crop",
+        alt: "חלל מעוצב עם תאורה אווירתית",
+      },
+      {
+        url: "https://plus.unsplash.com/premium_photo-1671580671733-92d038f1ea97?q=80&w=2070&auto=format&fit=crop",
+        alt: "אזור ישיבה מעוצב",
+      },
+      {
+        url: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=2070&auto=format&fit=crop",
+        alt: "אווירה מושלמת למסיבות",
+      },
+    ];
+    for (const { url, alt } of urls) {
+      await ctx.db.insert("officeImages", {
+        externalUrl: url, // This is an external URL, not a Convex storageId
+        alt,
+        visible: true,
+        inHeader: true,
+        inGallery: true,
+        createdAt: Date.now(),
+      });
+    }
+    return {
+      success: true,
+      message: `Seeded ${urls.length} office images with external URLs.`,
+    };
+  },
+});

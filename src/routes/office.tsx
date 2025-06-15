@@ -11,6 +11,7 @@ import { BookingManager } from "@/components/office/booking-manager";
 import { PricingControl } from "@/components/office/pricing-control";
 import { FcmTokenRegistrar } from "@/components/office/fcm-token-registrar";
 import { ServicesControl } from "@/components/office/services-control";
+import { OfficeImageUpload } from "@/components/office/office-image-upload";
 
 export const Route = createFileRoute("/office")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -41,10 +42,11 @@ function RouteComponent() {
             className="space-y-4"
             dir="rtl"
           >
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="bookings">הזמנות</TabsTrigger>
               <TabsTrigger value="pricing">מחירים</TabsTrigger>
               <TabsTrigger value="services">שירותים</TabsTrigger>
+              <TabsTrigger value="images">תמונות</TabsTrigger>
             </TabsList>
             <TabsContent
               value="bookings"
@@ -63,6 +65,16 @@ function RouteComponent() {
               className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
             >
               <ServicesControl />
+            </TabsContent>
+            <TabsContent
+              value="images"
+              className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
+            >
+              {/* טאב להעלאת תמונות */}
+              <div className="mb-4">
+                <h2 className="text-xl font-bold mb-2">העלאת תמונה חדשה</h2>
+                <OfficeImageUpload />
+              </div>
             </TabsContent>
           </Tabs>
         </div>

@@ -82,4 +82,29 @@ export default defineSchema({
     .index("by_key", ["key"])
     .index("by_visible", ["visible"])
     .index("by_order", ["order"]),
+
+  // Office images for gallery/header
+  officeImages: defineTable(
+    v.union(
+      v.object({
+        storageId: v.id("_storage"),
+        alt: v.optional(v.string()),
+        visible: v.boolean(),
+        inHeader: v.boolean(),
+        inGallery: v.boolean(),
+        createdAt: v.number(),
+      }),
+      v.object({
+        externalUrl: v.string(),
+        alt: v.optional(v.string()),
+        visible: v.boolean(),
+        inHeader: v.boolean(),
+        inGallery: v.boolean(),
+        createdAt: v.number(),
+      }),
+    ),
+  )
+    .index("by_visible", ["visible"])
+    .index("by_inHeader", ["inHeader"])
+    .index("by_inGallery", ["inGallery"]),
 });
