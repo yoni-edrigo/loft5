@@ -14,7 +14,7 @@ export const getServices = query({
         .withIndex("by_visible")
         .filter((q2) => q2.eq(q2.field("visible"), true));
     } else {
-      q = ctx.db.query("services").fullTableScan();
+      q = ctx.db.query("services").withIndex("by_order");
     }
     const services = await q.collect();
     // Sort by order if present

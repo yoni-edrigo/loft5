@@ -63,7 +63,7 @@ export function ServicesCarousel() {
   const services: ServiceDoc[] =
     useQuery(api.services.getServices, {
       onlyVisible: true,
-    })?.reverse() || [];
+    }) || [];
 
   const shiftLeft = () => {
     if (position < services.length - 1) {

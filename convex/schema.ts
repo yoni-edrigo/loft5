@@ -80,5 +80,6 @@ export default defineSchema({
     updatedAt: v.optional(v.number()),
   })
     .index("by_key", ["key"])
-    .index("by_visible", ["visible"]),
+    .index("by_visible", ["visible"])
+    .index("by_order", ["order"]),
 });
