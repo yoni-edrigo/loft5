@@ -6,12 +6,13 @@ import { Toaster } from "@/components/ui/sonner";
 import FloatingOfficeButton from "@/components/floating-office-button";
 import Hero from "./components/hero";
 import Footer from "./components/footer";
+import { ServicesCarousel } from "./components/services-carousel";
 
 export default function LandingPageV2() {
   return (
     <>
       <Hero />
-
+      <ServicesCarousel />
       <section
         id="calendar"
         className="py-12 sm:py-20 px-3 sm:px-4 md:px-8 bg-gradient-to-b from-muted to-background"
