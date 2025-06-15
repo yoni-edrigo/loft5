@@ -19,6 +19,7 @@ import type * as get_functions from "../get_functions.js";
 import type * as http from "../http.js";
 import type * as seed from "../seed.js";
 import type * as send_push from "../send_push.js";
+import type * as services from "../services.js";
 import type * as set_fcm_token from "../set_fcm_token.js";
 import type * as set_functions from "../set_functions.js";
 import type * as topic_push from "../topic_push.js";
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   seed: typeof seed;
   send_push: typeof send_push;
+  services: typeof services;
   set_fcm_token: typeof set_fcm_token;
   set_functions: typeof set_functions;
   topic_push: typeof topic_push;

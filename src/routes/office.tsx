@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BookingManager } from "@/components/office/booking-manager";
 import { PricingControl } from "@/components/office/pricing-control";
 import { FcmTokenRegistrar } from "@/components/office/fcm-token-registrar";
+import { ServicesControl } from "@/components/office/services-control";
 
 export const Route = createFileRoute("/office")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -40,9 +41,10 @@ function RouteComponent() {
             className="space-y-4"
             dir="rtl"
           >
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="bookings">הזמנות</TabsTrigger>
               <TabsTrigger value="pricing">מחירים</TabsTrigger>
+              <TabsTrigger value="services">שירותים</TabsTrigger>
             </TabsList>
             <TabsContent
               value="bookings"
@@ -55,6 +57,12 @@ function RouteComponent() {
               className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
             >
               <PricingControl />
+            </TabsContent>
+            <TabsContent
+              value="services"
+              className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
+            >
+              <ServicesControl />
             </TabsContent>
           </Tabs>
         </div>

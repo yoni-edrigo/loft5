@@ -172,3 +172,81 @@ export const seedDatabase = mutation({
     };
   },
 });
+
+export const seedServices = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Delete all existing records from services table
+    const serviceRecords = await ctx.db.query("services").collect();
+    for (const record of serviceRecords) {
+      await ctx.db.delete(record._id);
+    }
+    console.log("Cleared existing data from services table");
+
+    // Seed demo services
+    const demoServices = [
+      {
+        key: "private_events",
+        title: "אירועים פרטיים",
+        description:
+          "מסיבות יום הולדת, אירועי חברה וחגיגות משפחתיות באווירה אינטימית. המרחב מתאים עד 25 איש בצהריים וללא הגבלה בערב.",
+        icon: "Users",
+        order: 1,
+        visible: true,
+      },
+      {
+        key: "content_photos",
+        title: "צילומים ותוכן",
+        description:
+          "סטודיו מעוצב לצילומי אופנה, מוצרים ותוכן דיגיטלי. תאורה מקצועית ורקע מושלם לכל פרויקט יצירתי.",
+        icon: "Camera",
+        order: 2,
+        visible: true,
+      },
+      {
+        key: "weddings_love",
+        title: "חתונות ואהבה",
+        description:
+          "חתונות אינטימיות, מסיבות רווקות וצילומי טרום חתונה באווירה רומנטית עם עיצוב מותאם אישית.",
+        icon: "Heart",
+        order: 3,
+        visible: true,
+      },
+      {
+        key: "business_events",
+        title: "אירועי עסקים",
+        description:
+          "השקות מוצרים, כנסים קטנים, סדנאות ופגישות לקוחות במרחב מקצועי ומעוצב שמשאיר רושם.",
+        icon: "Building",
+        order: 4,
+        visible: true,
+      },
+      {
+        key: "creative_workshops",
+        title: "סדנאות יצירה",
+        description:
+          "סדנאות יצירה, קורסי בישול וסדנאות צילום בקבוצות קטנות במרחב מעורר השראה ומצויד בכל הנדרש.",
+        icon: "Lightbulb",
+        order: 5,
+        visible: true,
+      },
+      {
+        key: "catering_services",
+        title: "קייטרינג ושירותים",
+        description:
+          "קייטרינג מותאם, עיצוב אירועים, ציוד AV מקצועי, צילום ווידאו ותיאום מלא של האירוע שלכם.",
+        icon: "Utensils",
+        order: 6,
+        visible: true,
+      },
+    ];
+    for (const service of demoServices) {
+      await ctx.db.insert("services", { ...service, updatedAt: Date.now() });
+    }
+    console.log(`- Seeded ${demoServices.length} services info cards`);
+    return {
+      success: true,
+      message: `Seeded ${demoServices.length} services info cards`,
+    };
+  },
+});

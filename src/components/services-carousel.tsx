@@ -1,67 +1,20 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import {
-  type LucideIcon,
-  Users,
-  Camera,
-  Heart,
-  Lightbulb,
-  Building,
-  Utensils,
-} from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Doc } from "../../convex/_generated/dataModel";
+import { icons, Users } from "lucide-react";
 import { useIsMobile } from "@/lib/utils";
 
-interface ServiceFeature {
-  title: string;
-  description: string;
-  Icon: LucideIcon;
-}
-
-const services: ServiceFeature[] = [
-  {
-    title: "אירועים פרטיים",
-    Icon: Users,
-    description:
-      "מסיבות יום הולדת, אירועי חברה וחגיגות משפחתיות באווירה אינטימית. המרחב מתאים עד 25 איש בצהריים וללא הגבלה בערב.",
-  },
-  {
-    title: "צילומים ותוכן",
-    Icon: Camera,
-    description:
-      "סטודיו מעוצב לצילומי אופנה, מוצרים ותוכן דיגיטלי. תאורה מקצועית ורקע מושלם לכל פרויקט יצירתי.",
-  },
-  {
-    title: "חתונות ואהבה",
-    Icon: Heart,
-    description:
-      "חתונות אינטימיות, מסיבות רווקות וצילומי טרום חתונה באווירה רומנטית עם עיצוב מותאם אישית.",
-  },
-  {
-    title: "אירועי עסקים",
-    Icon: Building,
-    description:
-      "השקות מוצרים, כנסים קטנים, סדנאות ופגישות לקוחות במרחב מקצועי ומעוצב שמשאיר רושם.",
-  },
-  {
-    title: "סדנאות יצירה",
-    Icon: Lightbulb,
-    description:
-      "סדנאות יצירה, קורסי בישול וסדנאות צילום בקבוצות קטנות במרחב מעורר השראה ומצויד בכל הנדרש.",
-  },
-  {
-    title: "קייטרינג ושירותים",
-    Icon: Utensils,
-    description:
-      "קייטרינג מותאם, עיצוב אירועים, ציוד AV מקצועי, צילום ווידאו ותיאום מלא של האירוע שלכם.",
-  },
-];
+// Use the generated type for a service document
+export type ServiceDoc = Doc<"services">;
 
 interface FeatureProps {
   position: number;
   index: number;
   title: string;
   description: string;
-  Icon: LucideIcon;
+  Icon: React.ElementType;
 }
 
 const ServiceCard = ({
@@ -105,6 +58,12 @@ const ServiceCard = ({
 export function ServicesCarousel() {
   const [position, setPosition] = useState(0);
   const isMobile = useIsMobile();
+
+  // Fetch live services, only those visible
+  const services: ServiceDoc[] =
+    useQuery(api.services.getServices, {
+      onlyVisible: true,
+    })?.reverse() || [];
 
   const shiftLeft = () => {
     if (position < services.length - 1) {
@@ -196,14 +155,23 @@ export function ServicesCarousel() {
           aria-labelledby="services-carousel-heading"
           aria-live="polite"
         >
-          {services.map((service, index) => (
-            <ServiceCard
-              {...service}
-              key={index}
-              position={position}
-              index={index}
-            />
-          ))}
+          {services.map((service, index) => {
+            // Map icon string to LucideIcon
+            const Icon =
+              service.icon && icons[service.icon as keyof typeof icons]
+                ? icons[service.icon as keyof typeof icons]
+                : Users;
+            return (
+              <ServiceCard
+                key={service.key || index}
+                position={position}
+                index={index}
+                title={service.title}
+                description={service.description}
+                Icon={Icon}
+              />
+            );
+          })}
         </div>
 
         <div
@@ -243,7 +211,9 @@ export function ServicesCarousel() {
                 {services.map((_, index) => (
                   <button
                     key={index}
-                    className={`w-3 h-3 rounded-full transition-colors ${index === position ? "bg-primary" : "bg-muted"}`}
+                    className={`w-3 h-3 rounded-full transition-colors ${
+                      index === position ? "bg-primary" : "bg-muted"
+                    }`}
                     onClick={() => setPosition(index)}
                     aria-label={`עבור לשירות מספר ${index + 1}`}
                     aria-selected={index === position}

@@ -68,4 +68,17 @@ export default defineSchema({
   })
     .index("by_token", ["token"])
     .index("by_userId", ["userId"]),
+
+  // Services info cards (for carousel, etc)
+  services: defineTable({
+    key: v.string(), // unique key for the service (e.g. "private_events")
+    title: v.string(),
+    description: v.string(),
+    icon: v.string(), // icon name or identifier (e.g. "Users", "Camera")
+    order: v.optional(v.number()), // for sorting
+    visible: v.optional(v.boolean()), // allow hiding
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_key", ["key"])
+    .index("by_visible", ["visible"]),
 });
