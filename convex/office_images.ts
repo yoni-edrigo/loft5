@@ -49,9 +49,23 @@ export const saveOfficeImage = mutation({
 
 // Query to get all office images
 export const getOfficeImages = query({
-  args: {},
-  handler: async (ctx) => {
-    const images = await ctx.db.query("officeImages").collect();
+  args: v.object({
+    inHeader: v.optional(v.boolean()),
+    inGallery: v.optional(v.boolean()),
+    visible: v.optional(v.boolean()),
+  }),
+  handler: async (ctx, args) => {
+    let q = ctx.db.query("officeImages");
+    if (args.inHeader !== undefined) {
+      q = q.filter((q) => q.eq(q.field("inHeader"), args.inHeader));
+    }
+    if (args.inGallery !== undefined) {
+      q = q.filter((q) => q.eq(q.field("inGallery"), args.inGallery));
+    }
+    if (args.visible !== undefined) {
+      q = q.filter((q) => q.eq(q.field("visible"), args.visible));
+    }
+    const images = await q.collect();
     return await Promise.all(
       images.map(async (img) => {
         if ("externalUrl" in img && img.externalUrl) {

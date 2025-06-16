@@ -3,16 +3,26 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Doc } from "../../convex/_generated/dataModel";
 
 export default function Hero() {
+  const headerImages = useQuery(api.office_images.getOfficeImages, {
+    inHeader: true,
+    visible: true,
+  }) as (Doc<"officeImages"> & { url?: string })[] | undefined;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Default photos if config.photos is undefined
-  const photos = [
-    "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?q=80&w=2070&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=2070&auto=format&fit=crop",
-  ];
+  // Use headerImages if available, otherwise fallback to default photos
+  const photos =
+    headerImages && headerImages.length > 0
+      ? headerImages.map((img) => ("url" in img ? (img as any).url : undefined))
+      : [
+          "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?q=80&w=2070&auto=format&fit=crop",
+          "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=2070&auto=format&fit=crop",
+        ];
 
   // Carousel animation
 

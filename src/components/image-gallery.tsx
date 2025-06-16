@@ -4,6 +4,9 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useInView } from "react-intersection-observer";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Doc } from "../../convex/_generated/dataModel";
 
 const GALLERY_IMAGES = [
   {
@@ -54,11 +57,22 @@ const item = {
 };
 
 export default function ImageGallery() {
+  const galleryImages = useQuery(api.office_images.getOfficeImages, {
+    inGallery: true,
+    visible: true,
+  }) as (Doc<"officeImages"> & { url?: string })[] | undefined;
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
   });
+
+  const images =
+    galleryImages && galleryImages.length > 0
+      ? galleryImages.map((img) =>
+          "url" in img ? (img as any).url : undefined,
+        )
+      : GALLERY_IMAGES.map((img) => img.src);
 
   return (
     <>
@@ -69,7 +83,7 @@ export default function ImageGallery() {
         animate={inView ? "show" : "hidden"}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
       >
-        {GALLERY_IMAGES.map((image, index) => (
+        {images.map((src, index) => (
           <motion.div
             key={index}
             variants={item}
@@ -79,11 +93,14 @@ export default function ImageGallery() {
           >
             <div
               className="relative cursor-pointer h-48 sm:h-64"
-              onClick={() => setSelectedImage(image.src)}
+              onClick={() => setSelectedImage(src)}
             >
               <img
-                src={image.src || "/placeholder.svg"}
-                alt={image.alt}
+                src={src || "/placeholder.svg"}
+                alt={
+                  (galleryImages && galleryImages[index]?.alt) ||
+                  GALLERY_IMAGES[index]?.alt
+                }
                 className="w-full h-full object-cover"
               />
               <motion.div
@@ -92,7 +109,8 @@ export default function ImageGallery() {
                 className="absolute inset-0 bg-black/40 flex items-center justify-center"
               >
                 <span className="text-white text-base sm:text-lg font-medium">
-                  {image.title}
+                  {(galleryImages && galleryImages[index]?.alt) ||
+                    GALLERY_IMAGES[index]?.title}
                 </span>
               </motion.div>
             </div>
