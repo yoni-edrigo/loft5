@@ -68,7 +68,6 @@ if (!self.define) {
     });
   };
 }
-importScripts("firebase-messaging-sw.js");
 define(["./workbox-54d0af47"], function (workbox) {
   "use strict";
 

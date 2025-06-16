@@ -40,26 +40,24 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   return permission;
 }
 
-// Register service worker
+// Register the FCM service worker only if not already registered with the same script
 async function registerServiceWorker(): Promise<ServiceWorkerRegistration> {
   try {
-    console.log("Getting service worker registration for FCM...");
-
-    // First check if we already have an active service worker
-    const existingReg = await navigator.serviceWorker.getRegistration();
-    if (existingReg) {
-      console.log("Using existing service worker registration:", existingReg);
-      return existingReg;
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const reg of registrations) {
+      if (
+        reg.active &&
+        reg.active.scriptURL.endsWith("/firebase-messaging-sw.js")
+      ) {
+        console.log("FCM service worker already registered:", reg);
+        return reg;
+      }
     }
-
-    // If no service worker found, register our Firebase service worker
     console.log("Registering Firebase messaging service worker...");
     const registration = await navigator.serviceWorker.register(
       "/firebase-messaging-sw.js",
       { scope: "/" },
     );
-
-    // Wait for service worker to be ready
     await navigator.serviceWorker.ready;
     console.log("Service worker registered successfully:", registration);
     return registration;

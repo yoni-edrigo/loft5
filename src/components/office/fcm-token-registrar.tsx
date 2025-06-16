@@ -129,11 +129,14 @@ export function FcmTokenRegistrar() {
 
       // Check if we already have a token for this device
       const existingToken = localStorage.getItem("fcm_token");
+      const lastSentToken = localStorage.getItem("fcm_token_last_sent");
       if (existingToken) {
         console.log("Using existing FCM token");
-        // Re-register the existing token to ensure it's still valid
-        await addFcmToken({ token: existingToken });
-
+        // Only send to backend if not sent before
+        if (existingToken !== lastSentToken) {
+          await addFcmToken({ token: existingToken });
+          localStorage.setItem("fcm_token_last_sent", existingToken);
+        }
         // Also check if token needs refresh
         await checkTokenRefresh();
         return;
@@ -144,8 +147,11 @@ export function FcmTokenRegistrar() {
       const token = await requestFCMToken();
       if (token) {
         console.log("Registering new FCM token");
-        // Register token with backend
-        await addFcmToken({ token });
+        // Only send to backend if not sent before
+        if (token !== lastSentToken) {
+          await addFcmToken({ token });
+          localStorage.setItem("fcm_token_last_sent", token);
+        }
         // Store in localStorage to remember this device has a token
         localStorage.setItem("fcm_token", token);
         toast.success("Notifications enabled", { id: "notifications-setup" });
