@@ -12,6 +12,8 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as TermsImport } from './routes/terms'
+import { Route as SiteDesignImport } from './routes/site-design'
+import { Route as SiteControlImport } from './routes/site-control'
 import { Route as OfficeImport } from './routes/office'
 import { Route as AccessibilityImport } from './routes/accessibility'
 import { Route as IndexImport } from './routes/index'
@@ -21,6 +23,18 @@ import { Route as IndexImport } from './routes/index'
 const TermsRoute = TermsImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SiteDesignRoute = SiteDesignImport.update({
+  id: '/site-design',
+  path: '/site-design',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SiteControlRoute = SiteControlImport.update({
+  id: '/site-control',
+  path: '/site-control',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -67,6 +81,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfficeImport
       parentRoute: typeof rootRoute
     }
+    '/site-control': {
+      id: '/site-control'
+      path: '/site-control'
+      fullPath: '/site-control'
+      preLoaderRoute: typeof SiteControlImport
+      parentRoute: typeof rootRoute
+    }
+    '/site-design': {
+      id: '/site-design'
+      path: '/site-design'
+      fullPath: '/site-design'
+      preLoaderRoute: typeof SiteDesignImport
+      parentRoute: typeof rootRoute
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -83,6 +111,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
   '/office': typeof OfficeRoute
+  '/site-control': typeof SiteControlRoute
+  '/site-design': typeof SiteDesignRoute
   '/terms': typeof TermsRoute
 }
 
@@ -90,6 +120,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
   '/office': typeof OfficeRoute
+  '/site-control': typeof SiteControlRoute
+  '/site-design': typeof SiteDesignRoute
   '/terms': typeof TermsRoute
 }
 
@@ -98,15 +130,36 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/accessibility': typeof AccessibilityRoute
   '/office': typeof OfficeRoute
+  '/site-control': typeof SiteControlRoute
+  '/site-design': typeof SiteDesignRoute
   '/terms': typeof TermsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/accessibility' | '/office' | '/terms'
+  fullPaths:
+    | '/'
+    | '/accessibility'
+    | '/office'
+    | '/site-control'
+    | '/site-design'
+    | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/accessibility' | '/office' | '/terms'
-  id: '__root__' | '/' | '/accessibility' | '/office' | '/terms'
+  to:
+    | '/'
+    | '/accessibility'
+    | '/office'
+    | '/site-control'
+    | '/site-design'
+    | '/terms'
+  id:
+    | '__root__'
+    | '/'
+    | '/accessibility'
+    | '/office'
+    | '/site-control'
+    | '/site-design'
+    | '/terms'
   fileRoutesById: FileRoutesById
 }
 
@@ -114,6 +167,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccessibilityRoute: typeof AccessibilityRoute
   OfficeRoute: typeof OfficeRoute
+  SiteControlRoute: typeof SiteControlRoute
+  SiteDesignRoute: typeof SiteDesignRoute
   TermsRoute: typeof TermsRoute
 }
 
@@ -121,6 +176,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccessibilityRoute: AccessibilityRoute,
   OfficeRoute: OfficeRoute,
+  SiteControlRoute: SiteControlRoute,
+  SiteDesignRoute: SiteDesignRoute,
   TermsRoute: TermsRoute,
 }
 
@@ -137,6 +194,8 @@ export const routeTree = rootRoute
         "/",
         "/accessibility",
         "/office",
+        "/site-control",
+        "/site-design",
         "/terms"
       ]
     },
@@ -148,6 +207,12 @@ export const routeTree = rootRoute
     },
     "/office": {
       "filePath": "office.tsx"
+    },
+    "/site-control": {
+      "filePath": "site-control.tsx"
+    },
+    "/site-design": {
+      "filePath": "site-design.tsx"
     },
     "/terms": {
       "filePath": "terms.tsx"

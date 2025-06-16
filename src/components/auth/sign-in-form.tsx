@@ -13,7 +13,9 @@ export function SignInForm() {
   return (
     <Card className="w-96 mx-auto">
       <CardHeader>
-        <CardTitle className="text-center">Log in to see the numbers</CardTitle>
+        <CardTitle className="text-center">
+          {flow === "signIn" ? "התחברות למערכת" : "הרשמה למערכת"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -27,22 +29,15 @@ export function SignInForm() {
             });
           }}
         >
-          <Input type="email" name="email" placeholder="Email" required />
-          <Input
-            type="password"
-            name="password"
-            placeholder="Password"
-            required
-          />
+          <Input type="email" name="email" placeholder="אימייל" required />
+          <Input type="password" name="password" placeholder="סיסמה" required />
           <Button type="submit" className="w-full">
-            {flow === "signIn" ? "Sign in" : "Sign up"}
+            {flow === "signIn" ? "התחבר" : "הרשם"}
           </Button>
 
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">
-              {flow === "signIn"
-                ? "Don't have an account?"
-                : "Already have an account?"}
+              {flow === "signIn" ? "אין לך חשבון?" : "כבר יש לך חשבון?"}
             </span>
             <Button
               variant="link"
@@ -50,13 +45,13 @@ export function SignInForm() {
               type="button"
               onClick={() => setFlow(flow === "signIn" ? "signUp" : "signIn")}
             >
-              {flow === "signIn" ? "Sign up instead" : "Sign in instead"}
+              {flow === "signIn" ? "להרשמה" : "להתחברות"}
             </Button>
           </div>
 
           {error && (
             <Alert variant="destructive">
-              <AlertTitle>Error</AlertTitle>
+              <AlertTitle>שגיאה</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { formatPrice } from "@/lib/utils";
-import { BookingDoc } from "@/lib/types";
 import { BookingDetailsDialog } from "./booking-details-dialog";
 import { Calendar } from "../ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -30,18 +28,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useState } from "react";
 
-export function BookingManager() {
-  const [selectedTab, setSelectedTab] = useState("pending");
-  const [selectedBooking, setSelectedBooking] = useState<BookingDoc | null>(
-    null,
-  );
+interface BookingManagerProps {
+  selectedTab: string;
+  setSelectedTab: (tab: string) => void;
+  selectedBookingId: string | null;
+  setSelectedBookingId: (id: string | null) => void;
+}
+
+export function BookingManager({
+  selectedTab,
+  setSelectedTab,
+  selectedBookingId,
+  setSelectedBookingId,
+}: BookingManagerProps) {
   const [nameFilter, setNameFilter] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
   // Query all bookings
   const bookings = useQuery(api.get_functions.getAllBookings) || [];
+
+  // Find the selected booking by ID
+  const selectedBooking =
+    selectedBookingId && bookings
+      ? bookings.find((b) => b._id === selectedBookingId) || null
+      : null;
 
   // Filter bookings based on current tab, name, date, and payment status
   const filteredBookings = bookings.filter((booking) => {
@@ -210,7 +223,7 @@ export function BookingManager() {
                       <TableRow
                         key={booking._id}
                         className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => setSelectedBooking(booking)}
+                        onClick={() => setSelectedBookingId(booking._id)}
                       >
                         <TableCell>
                           {format(new Date(booking.eventDate), "dd/MM/yyyy", {
@@ -264,8 +277,10 @@ export function BookingManager() {
       </CardContent>
 
       <BookingDetailsDialog
-        open={selectedBooking !== null}
-        onOpenChange={(open) => !open && setSelectedBooking(null)}
+        open={!!selectedBooking}
+        onOpenChange={(open) => {
+          if (!open) setSelectedBookingId(null);
+        }}
         booking={selectedBooking}
       />
     </Card>

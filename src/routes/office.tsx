@@ -5,78 +5,59 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { Authenticated, Unauthenticated } from "convex/react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { BookingManager } from "@/components/office/booking-manager";
-import { PricingControl } from "@/components/office/pricing-control";
 import { FcmTokenRegistrar } from "@/components/office/fcm-token-registrar";
-import { ServicesControl } from "@/components/office/services-control";
-import { OfficeImageUpload } from "@/components/office/office-image-upload";
+import { OfficeNavbar } from "@/components/office/office-navbar";
 
 export const Route = createFileRoute("/office")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      tab: (search.tab as string) || "bookings",
+      tab: (search.tab as string) || "pending",
+      bookingId: search.bookingId as string,
     };
   },
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { tab } = useSearch({ from: "/office" });
+  const { tab, bookingId } = useSearch({ from: "/office" });
   const navigate = useNavigate();
+
+  // Handlers to update search params
+  const setTab = (newTab: string) => {
+    void navigate({
+      search: { tab: newTab, bookingId } as any,
+      replace: true,
+    });
+  };
+  const setBookingId = (id: string | null) => {
+    if (id) {
+      void navigate({
+        search: { tab, bookingId: id } as any,
+        replace: true,
+      });
+    } else {
+      void navigate({
+        search: { tab } as any,
+        replace: true,
+      });
+    }
+  };
+
   return (
     <>
+      <OfficeNavbar />
       <Authenticated>
-        <div className="container mx-auto py-8 px-4">
-          <h1 className="text-3xl font-bold text-center mb-8">ניהול המשרד</h1>
+        <div className="container mx-auto pb-8 px-4">
+          <h1 className="text-3xl font-bold text-center mb-8">ניהול הזמנות</h1>
           <FcmTokenRegistrar />
-          <Tabs
-            value={tab}
-            onValueChange={(value) => {
-              void navigate({
-                to: "/office",
-                search: { tab: value },
-              });
-            }}
-            className="space-y-4"
-            dir="rtl"
-          >
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="bookings">הזמנות</TabsTrigger>
-              <TabsTrigger value="pricing">מחירים</TabsTrigger>
-              <TabsTrigger value="services">שירותים</TabsTrigger>
-              <TabsTrigger value="images">תמונות</TabsTrigger>
-            </TabsList>
-            <TabsContent
-              value="bookings"
-              className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
-            >
-              <BookingManager />
-            </TabsContent>
-            <TabsContent
-              value="pricing"
-              className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
-            >
-              <PricingControl />
-            </TabsContent>
-            <TabsContent
-              value="services"
-              className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
-            >
-              <ServicesControl />
-            </TabsContent>
-            <TabsContent
-              value="images"
-              className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
-            >
-              {/* טאב להעלאת תמונות */}
-              <div className="mb-4">
-                <h2 className="text-xl font-bold mb-2">העלאת תמונה חדשה</h2>
-                <OfficeImageUpload />
-              </div>
-            </TabsContent>
-          </Tabs>
+          <BookingManager
+            selectedTab={tab}
+            setSelectedTab={setTab}
+            selectedBookingId={bookingId}
+            setSelectedBookingId={setBookingId}
+          />
         </div>
       </Authenticated>
       <Unauthenticated>
