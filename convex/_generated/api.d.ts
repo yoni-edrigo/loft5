@@ -25,6 +25,7 @@ import type * as services from "../services.js";
 import type * as set_fcm_token from "../set_fcm_token.js";
 import type * as set_functions from "../set_functions.js";
 import type * as topic_push from "../topic_push.js";
+import type * as user_roles from "../user_roles.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   set_fcm_token: typeof set_fcm_token;
   set_functions: typeof set_functions;
   topic_push: typeof topic_push;
+  user_roles: typeof user_roles;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

@@ -13,6 +13,7 @@ import { OfficeNavbar } from "@/components/office/office-navbar";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { useEffect } from "react";
 import { RoleGuard } from "@/components/auth/RoleGuard";
+import { UserManagement } from "@/components/office/user-management";
 
 export const Route = createFileRoute("/site-control")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -72,7 +73,7 @@ function RouteComponent() {
                 value="users"
                 className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
               >
-                <>{"users placeholder"}</>
+                <UserManagement />
               </TabsContent>
             </Tabs>
           </div>
