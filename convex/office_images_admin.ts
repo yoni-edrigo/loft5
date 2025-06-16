@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const updateOfficeImage = mutation({
   args: v.object({
@@ -10,6 +11,12 @@ export const updateOfficeImage = mutation({
     inGallery: v.optional(v.boolean()),
   }),
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.some((r) => r === "DESIGNER" || r === "ADMIN")) {
+      throw new Error("Unauthorized");
+    }
     return await ctx.db.patch(args.id, {
       ...(args.alt !== undefined && { alt: args.alt }),
       ...(args.visible !== undefined && { visible: args.visible }),
@@ -22,6 +29,12 @@ export const updateOfficeImage = mutation({
 export const deleteOfficeImage = mutation({
   args: { id: v.id("officeImages") },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.some((r) => r === "DESIGNER" || r === "ADMIN")) {
+      throw new Error("Unauthorized");
+    }
     return await ctx.db.delete(args.id);
   },
 });

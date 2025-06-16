@@ -174,6 +174,13 @@ export const createBooking = mutation({
 export const cancelBooking = mutation({
   args: { id: v.id("bookings") },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
+
     const booking = await ctx.db.get(args.id);
     if (!booking) throw new Error("Booking not found");
 
@@ -199,7 +206,7 @@ export const cancelBooking = mutation({
   },
 });
 
-// Update availability (admin)
+// Update availability (admin/manager)
 export const updateAvailability = mutation({
   args: {
     date: v.string(),
@@ -211,6 +218,12 @@ export const updateAvailability = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
     const existing = await ctx.db
       .query("availability")
       .withIndex("by_date", (q) => q.eq("date", args.date))
@@ -226,7 +239,7 @@ export const updateAvailability = mutation({
   },
 });
 
-// Update pricing (admin)
+// Update pricing (admin only)
 export const updatePricing = mutation({
   args: {
     minimumPrice: v.number(),
@@ -240,6 +253,12 @@ export const updatePricing = mutation({
     photographerPrice: v.number(),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: ADMIN role required");
+    }
     const existing = await ctx.db.query("pricing").first();
 
     if (existing) {
@@ -252,10 +271,16 @@ export const updatePricing = mutation({
   },
 });
 
-// Delete all data from all tables
+// Delete all data from all tables (admin only)
 export const deleteAllData = mutation({
   args: {},
   handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: ADMIN role required");
+    }
     // Delete all existing records from all tables
     const pricingRecords = await ctx.db.query("pricing").collect();
     for (const record of pricingRecords) {
@@ -284,10 +309,16 @@ export const deleteAllData = mutation({
   },
 });
 
-// Delete all bookings
+// Delete all bookings (manager or admin)
 export const deleteAllBookings = mutation({
   args: {},
   handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
     // Get all bookings
     const bookingRecords = await ctx.db.query("bookings").collect();
 
@@ -320,7 +351,7 @@ export const deleteAllBookings = mutation({
   },
 });
 
-// Approve a booking
+// Approve a booking (manager or admin)
 export const approveBooking = mutation({
   args: {
     id: v.id("bookings"),
@@ -328,6 +359,12 @@ export const approveBooking = mutation({
     paymentMethod: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
     const booking = await ctx.db.get(args.id);
     if (!booking) throw new Error("Booking not found");
 
@@ -360,10 +397,16 @@ export const approveBooking = mutation({
   },
 });
 
-// Decline a booking and free up the time slot
+// Decline a booking (manager or admin)
 export const declineBooking = mutation({
   args: { id: v.id("bookings") },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
     const booking = await ctx.db.get(args.id);
     if (!booking) throw new Error("Booking not found");
 

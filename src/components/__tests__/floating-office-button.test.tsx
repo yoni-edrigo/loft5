@@ -59,7 +59,7 @@ describe("FloatingOfficeButton Component", () => {
 
     expect(mockNavigate).toHaveBeenCalledWith({
       to: "/office",
-      search: { tab: "bookings" },
+      search: { tab: "pending" },
     });
   });
 

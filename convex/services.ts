@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Get all services (optionally only visible ones, sorted by order)
 export const getServices = query({
@@ -33,6 +34,12 @@ export const setService = mutation({
     visible: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized");
+    }
     // Try to find existing by key
     const existing = await ctx.db
       .query("services")

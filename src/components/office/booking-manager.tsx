@@ -33,7 +33,7 @@ import { useState } from "react";
 interface BookingManagerProps {
   selectedTab: string;
   setSelectedTab: (tab: string) => void;
-  selectedBookingId: string | null;
+  selectedBookingId?: string | null;
   setSelectedBookingId: (id: string | null) => void;
 }
 

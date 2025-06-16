@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { Link } from "@tanstack/react-router";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useUserRoles } from "@/hooks/useUserRoles";
 
 const navigationLinks = [
   {
@@ -22,23 +23,12 @@ const navigationLinks = [
     search: { tab: "pending" },
     submenu: true,
     items: [
-      {
-        label: "ממתינות לאישור",
-        href: "/office",
-        search: { tab: "pending" },
-      },
-      {
-        label: "מאושרות",
-        href: "/office",
-        search: { tab: "approved" },
-      },
-      {
-        label: "נדחו",
-        href: "/office",
-        search: { tab: "declined" },
-      },
+      { label: "ממתינות לאישור", href: "/office", search: { tab: "pending" } },
+      { label: "מאושרות", href: "/office", search: { tab: "approved" } },
+      { label: "נדחו", href: "/office", search: { tab: "declined" } },
       { label: "הכל", href: "/office", search: { tab: "all" } },
     ],
+    roles: ["MANAGER", "ADMIN"],
   },
   {
     label: "ניהול עיצוב",
@@ -49,6 +39,7 @@ const navigationLinks = [
       { label: "שירותים", href: "/site-design", search: { tab: "services" } },
       { label: "תמונות", href: "/site-design", search: { tab: "images" } },
     ],
+    roles: ["DESIGNER", "ADMIN"],
   },
   {
     label: "ניהול אתר",
@@ -59,11 +50,18 @@ const navigationLinks = [
       { label: "מחירים", href: "/site-control", search: { tab: "pricing" } },
       { label: "משתמשים", href: "/site-control", search: { tab: "users" } },
     ],
+    roles: ["ADMIN"],
   },
 ];
 
 export function OfficeNavbar() {
   const { signOut } = useAuthActions();
+  const roles = useUserRoles();
+  const filteredLinks = roles
+    ? navigationLinks.filter((link) =>
+        link.roles.some((r) => roles.includes(r)),
+      )
+    : [];
 
   return (
     <header className="border-b px-4 md:px-6">
@@ -107,7 +105,7 @@ export function OfficeNavbar() {
             <PopoverContent align="start" className="w-64 p-1 md:hidden">
               <NavigationMenu className="max-w-none *:w-full">
                 <NavigationMenuList className="flex-col items-start gap-0 md:gap-2">
-                  {navigationLinks.map((link, index) => (
+                  {filteredLinks.map((link, index) => (
                     <NavigationMenuItem key={index} className="w-full">
                       {link.submenu && link.items ? (
                         <>
@@ -150,7 +148,7 @@ export function OfficeNavbar() {
             </Link>
             <NavigationMenu viewport={false} className="max-md:hidden">
               <NavigationMenuList className="gap-2">
-                {navigationLinks.map((link, index) => (
+                {filteredLinks.map((link, index) => (
                   <NavigationMenuItem key={index}>
                     {link.submenu && link.items ? (
                       <>

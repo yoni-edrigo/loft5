@@ -7,6 +7,27 @@ import { authTables } from "@convex-dev/auth/server";
 // The schema provides more precise TypeScript types.
 export default defineSchema({
   ...authTables,
+  // Add a custom users table with an optional role field
+  users: defineTable({
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+    // Role-based access: optional roles array field
+    roles: v.optional(
+      v.array(
+        v.union(
+          v.literal("ADMIN"),
+          v.literal("DESIGNER"),
+          v.literal("GUEST"),
+          v.literal("MANAGER"),
+        ),
+      ),
+    ),
+  }).index("email", ["email"]),
   // Customer bookings
   bookings: defineTable({
     customerName: v.string(),

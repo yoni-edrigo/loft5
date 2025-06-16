@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Mutation to generate an upload URL for images
 export const generateImageUploadUrl = mutation({
@@ -19,6 +20,12 @@ export const saveOfficeImage = mutation({
     inGallery: v.boolean(),
   }),
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.some((r) => r === "DESIGNER" || r === "ADMIN")) {
+      throw new Error("Unauthorized");
+    }
     // Enforce that exactly one of storageId or externalUrl is provided
     if (!!args.storageId === !!args.externalUrl) {
       throw new Error(
@@ -89,6 +96,12 @@ export const updateOfficeImageFlags = mutation({
     inGallery: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.some((r) => r === "DESIGNER" || r === "ADMIN")) {
+      throw new Error("Unauthorized");
+    }
     return await ctx.db.patch(args.id, {
       ...(args.visible !== undefined && { visible: args.visible }),
       ...(args.inHeader !== undefined && { inHeader: args.inHeader }),

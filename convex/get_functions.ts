@@ -1,9 +1,11 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ============ QUERIES ============
 
 // Get current pricing structure (fetch once, use for client-side calculations)
+// Public: No role check
 export const getPricing = query({
   args: {},
   handler: async (ctx) => {
@@ -12,6 +14,7 @@ export const getPricing = query({
 });
 
 // Get available time slots for a specific date
+// Public: No role check
 export const getAvailability = query({
   args: { date: v.string() },
   handler: async (ctx, args) => {
@@ -25,6 +28,7 @@ export const getAvailability = query({
 });
 
 // Get available dates in a date range
+// Public: No role check
 export const getAvailableDates = query({
   args: {
     startDate: v.string(),
@@ -50,29 +54,47 @@ export const getAvailableDates = query({
   },
 });
 
-// Get all bookings (admin)
+// Get all bookings (office: MANAGER or ADMIN)
 export const getAllBookings = query({
   args: {},
   handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
     return await ctx.db.query("bookings").order("desc").collect();
   },
 });
 
-// Get booking by ID
+// Get booking by ID (office: MANAGER or ADMIN)
 export const getBooking = query({
   args: { id: v.id("bookings") },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
     return await ctx.db.get(args.id);
   },
 });
 
-// Get bookings by date
+// Get bookings by date (office: MANAGER or ADMIN)
 export const getBookingsByDate = query({
   args: {
     date: v.string(),
     approvedOnly: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
     let query = ctx.db
       .query("bookings")
       .filter((q) => q.eq(q.field("eventDate"), args.date));
@@ -85,10 +107,16 @@ export const getBookingsByDate = query({
   },
 });
 
-// Get pending bookings (admin)
+// Get pending bookings (office: MANAGER or ADMIN)
 export const getPendingBookings = query({
   args: {},
   handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
     return await ctx.db
       .query("bookings")
       .filter((q) =>
