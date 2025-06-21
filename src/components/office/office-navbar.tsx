@@ -1,5 +1,10 @@
-import { Home } from "lucide-react";
+import { Home, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -7,11 +12,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Link } from "@tanstack/react-router";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useUserRoles } from "@/hooks/useUserRoles";
@@ -68,8 +69,8 @@ export function OfficeNavbar() {
       <div className="flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           {/* Mobile menu trigger */}
-          <Popover>
-            <PopoverTrigger asChild>
+          <Sheet>
+            <SheetTrigger asChild>
               <Button
                 className="group size-8 md:hidden"
                 variant="ghost"
@@ -101,46 +102,56 @@ export function OfficeNavbar() {
                   />
                 </svg>
               </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-64 p-1 md:hidden">
-              <NavigationMenu className="max-w-none *:w-full">
-                <NavigationMenuList className="flex-col items-start gap-0 md:gap-2">
-                  {filteredLinks.map((link, index) => (
-                    <NavigationMenuItem key={index} className="w-full">
-                      {link.submenu && link.items ? (
-                        <>
-                          <div className="text-muted-foreground px-2 py-1.5 text-xs font-medium">
-                            {link.label}
-                          </div>
-                          <ul>
-                            {link.items.map((item, itemIndex) => (
-                              <li key={itemIndex}>
-                                <Link
-                                  to={item.href}
-                                  search={item.search}
-                                  className="block w-full py-1.5 px-4 text-muted-foreground hover:text-primary"
-                                >
-                                  {item.label}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </>
-                      ) : (
-                        <Link
-                          to={link.href}
-                          search={link.search}
-                          className="block w-full py-1.5 px-2 text-muted-foreground hover:text-primary"
-                        >
-                          {link.label}
-                        </Link>
-                      )}
-                    </NavigationMenuItem>
-                  ))}
-                </NavigationMenuList>
-              </NavigationMenu>
-            </PopoverContent>
-          </Popover>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-64 p-4 md:hidden">
+              <div className="mb-4">
+                <Link to="/" className="flex items-center gap-2">
+                  <img
+                    src="/loft5-logo.png"
+                    alt="Loft 5"
+                    className="h-8 w-auto"
+                  />
+                  <span className="text-lg font-semibold">Loft 5</span>
+                </Link>
+              </div>
+              <nav className="flex flex-col gap-1">
+                {filteredLinks.map((link) =>
+                  link.submenu && link.items ? (
+                    <Collapsible key={link.label}>
+                      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2 font-medium hover:bg-accent">
+                        {link.label}
+                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <ul className="flex flex-col pt-1 pl-7">
+                          {link.items.map((item) => (
+                            <li key={item.label}>
+                              <Link
+                                to={item.href}
+                                search={item.search}
+                                className="block rounded-md py-2 px-3 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                              >
+                                {item.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <Link
+                      to={link.href}
+                      search={link.search}
+                      key={link.label}
+                      className="block rounded-md px-3 py-2 font-medium hover:bg-accent"
+                    >
+                      {link.label}
+                    </Link>
+                  ),
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
           {/* Main nav */}
           <div className="flex items-center gap-6">
             <Link to="/" className="text-primary hover:text-primary/90">
