@@ -3,14 +3,19 @@ import {
   TimeSlot,
   TimeSlotData,
   AvailabilitySlot,
-  PricingData,
+  LegacyPricingData,
+  ProductDoc,
+  SelectedProduct,
+  PackageSelection,
 } from "@/lib/types";
 import { format } from "date-fns";
+import { Id } from "../../convex/_generated/dataModel";
 
 export type BookingStore = {
   // Data loading states
   isPricingLoaded: boolean;
-  pricing: PricingData | null;
+  pricing: LegacyPricingData | null; // Keep for backward compatibility
+  products: ProductDoc[] | null;
   currentAvailability: AvailabilitySlot[] | null;
 
   // Selected booking details
@@ -18,11 +23,10 @@ export type BookingStore = {
   selectedTimeSlot: TimeSlot | null;
   numberOfParticipants: number;
   extraHours: number;
-  includesKaraoke: boolean;
-  includesPhotographer: boolean;
-  includesFood: boolean;
-  includesDrinks: boolean;
-  includesSnacks: boolean;
+
+  // NEW: Product selections (replaces boolean flags)
+  selectedProducts: SelectedProduct[];
+  packageSelections: Map<string, PackageSelection>; // packageKey -> selection
 
   // Customer info
   customerName: string;
@@ -30,17 +34,26 @@ export type BookingStore = {
   customerPhone: string;
 
   // Actions
-  setPricing: (pricing: PricingData | null) => void;
+  setPricing: (pricing: LegacyPricingData | null) => void;
+  setProducts: (products: ProductDoc[]) => void;
   setAvailability: (availability: AvailabilitySlot[]) => void;
   setSelectedDate: (date: Date | null) => void;
   setSelectedTimeSlot: (slot: TimeSlot | null) => void;
   setNumberOfParticipants: (count: number) => void;
   setExtraHours: (hours: number) => void;
-  setIncludesKaraoke: (includes: boolean) => void;
-  setIncludesPhotographer: (includes: boolean) => void;
-  setIncludesFood: (includes: boolean) => void;
-  setIncludesDrinks: (includes: boolean) => void;
-  setIncludesSnacks: (includes: boolean) => void;
+
+  // NEW: Product selection actions
+  selectProduct: (
+    packageKey: string,
+    productId: Id<"products">,
+    quantity?: number,
+  ) => void;
+  removeProduct: (packageKey: string) => void;
+  getSelectedProduct: (packageKey: string) => Id<"products"> | null;
+  addStandaloneProduct: (productId: Id<"products">, quantity?: number) => void;
+  removeStandaloneProduct: (productId: Id<"products">) => void;
+  isProductSelected: (productId: Id<"products">) => boolean;
+
   setCustomerInfo: (info: {
     name: string;
     email: string;
@@ -60,33 +73,113 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   // Initial state
   isPricingLoaded: false,
   pricing: null,
+  products: null,
   currentAvailability: null,
   selectedDate: null,
   selectedTimeSlot: null,
   numberOfParticipants: 10,
   extraHours: 0,
-  includesKaraoke: false,
-  includesPhotographer: false,
-  includesFood: false,
-  includesDrinks: false,
-  includesSnacks: false,
+
+  // NEW: Product selections
+  selectedProducts: [],
+  packageSelections: new Map(),
+
   customerName: "",
   customerEmail: "",
   customerPhone: "",
 
   // Actions
   setPricing: (pricing) => set({ pricing, isPricingLoaded: true }),
+  setProducts: (products) => set({ products }),
   setAvailability: (availability) => set({ currentAvailability: availability }),
   setSelectedDate: (date) => set({ selectedDate: date }),
   setSelectedTimeSlot: (slot) => set({ selectedTimeSlot: slot }),
   setNumberOfParticipants: (count) => set({ numberOfParticipants: count }),
   setExtraHours: (hours) => set({ extraHours: hours }),
-  setIncludesKaraoke: (includes) => set({ includesKaraoke: includes }),
-  setIncludesPhotographer: (includes) =>
-    set({ includesPhotographer: includes }),
-  setIncludesFood: (includes) => set({ includesFood: includes }),
-  setIncludesDrinks: (includes) => set({ includesDrinks: includes }),
-  setIncludesSnacks: (includes) => set({ includesSnacks: includes }),
+
+  // NEW: Product selection actions
+  selectProduct: (packageKey, productId, quantity) => {
+    set((state) => {
+      const newPackageSelections = new Map(state.packageSelections);
+      newPackageSelections.set(packageKey, {
+        packageKey,
+        productId,
+        quantity: quantity || state.numberOfParticipants,
+      });
+
+      // Update selectedProducts array
+      const newSelectedProducts = state.selectedProducts.filter(
+        (p) =>
+          !state.products?.find(
+            (prod) =>
+              prod.packageKey === packageKey && prod._id === p.productId,
+          ),
+      );
+
+      // Add the new selection
+      newSelectedProducts.push({
+        productId,
+        quantity: quantity || state.numberOfParticipants,
+      });
+
+      return {
+        packageSelections: newPackageSelections,
+        selectedProducts: newSelectedProducts,
+      };
+    });
+  },
+
+  removeProduct: (packageKey) => {
+    set((state) => {
+      const newPackageSelections = new Map(state.packageSelections);
+      newPackageSelections.delete(packageKey);
+
+      // Remove from selectedProducts array
+      const newSelectedProducts = state.selectedProducts.filter(
+        (p) =>
+          !state.products?.find(
+            (prod) =>
+              prod.packageKey === packageKey && prod._id === p.productId,
+          ),
+      );
+
+      return {
+        packageSelections: newPackageSelections,
+        selectedProducts: newSelectedProducts,
+      };
+    });
+  },
+
+  getSelectedProduct: (packageKey) => {
+    const state = get();
+    return state.packageSelections.get(packageKey)?.productId || null;
+  },
+
+  addStandaloneProduct: (productId, quantity) => {
+    set((state) => {
+      const newSelectedProducts = [...state.selectedProducts];
+      newSelectedProducts.push({
+        productId,
+        quantity: quantity || state.numberOfParticipants,
+      });
+      return { selectedProducts: newSelectedProducts };
+    });
+  },
+
+  removeStandaloneProduct: (productId) => {
+    set((state) => {
+      const newSelectedProducts = state.selectedProducts.filter(
+        (p) => p.productId !== productId,
+      );
+      return { selectedProducts: newSelectedProducts };
+    });
+  },
+
+  isProductSelected: (productId) => {
+    const state = get();
+    return state.selectedProducts.some((p) => p.productId === productId);
+  },
+
   setCustomerInfo: (info) =>
     set({
       customerName: info.name,
@@ -97,14 +190,11 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   calculateTotalPrice: () => {
     const {
       pricing,
+      products,
       selectedTimeSlot,
       numberOfParticipants,
       extraHours,
-      includesKaraoke,
-      includesPhotographer,
-      includesFood,
-      includesDrinks,
-      includesSnacks,
+      selectedProducts,
     } = get();
 
     if (!pricing || !selectedTimeSlot) return 0;
@@ -116,26 +206,54 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       total =
         numberOfParticipants > 25
           ? pricing.afternoonWithKaraoke // Large groups always include karaoke
-          : includesKaraoke
-            ? pricing.afternoonWithKaraoke
-            : pricing.afternoonWithoutKaraoke;
+          : pricing.afternoonWithoutKaraoke;
 
-      // Add per-person costs for food and drinks if selected
-      if (includesFood) total += pricing.foodPerPerson * numberOfParticipants;
-      if (includesDrinks)
-        total += pricing.drinksPerPerson * numberOfParticipants;
-      if (includesSnacks)
-        total += pricing.snacksPerPerson * numberOfParticipants;
+      // Calculate costs from selected products
+      for (const selection of selectedProducts) {
+        const product = products?.find((p) => p._id === selection.productId);
+        if (product) {
+          const quantity = selection.quantity || numberOfParticipants;
+          switch (product.unit) {
+            case "per_person":
+              total += product.price * quantity;
+              break;
+            case "per_event":
+              total += product.price;
+              break;
+            case "per_hour":
+              total += product.price * extraHours;
+              break;
+            case "flat":
+              total += product.price;
+              break;
+          }
+        }
+      }
     } else {
       // Evening event base price
       total = pricing.loftPerPerson * numberOfParticipants;
 
-      // Add selected per-person options
-      if (includesFood) total += pricing.foodPerPerson * numberOfParticipants;
-      if (includesDrinks)
-        total += pricing.drinksPerPerson * numberOfParticipants;
-      if (includesSnacks)
-        total += pricing.snacksPerPerson * numberOfParticipants;
+      // Calculate costs from selected products
+      for (const selection of selectedProducts) {
+        const product = products?.find((p) => p._id === selection.productId);
+        if (product) {
+          const quantity = selection.quantity || numberOfParticipants;
+          switch (product.unit) {
+            case "per_person":
+              total += product.price * quantity;
+              break;
+            case "per_event":
+              total += product.price;
+              break;
+            case "per_hour":
+              total += product.price * extraHours;
+              break;
+            case "flat":
+              total += product.price;
+              break;
+          }
+        }
+      }
 
       // Add extra hours if any
       if (extraHours > 0) {
@@ -144,11 +262,6 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
 
       // Ensure minimum price for evening
       total = Math.max(total, pricing.minimumPrice);
-    }
-
-    // Add photographer if selected
-    if (includesPhotographer) {
-      total += pricing.photographerPrice;
     }
 
     return total;
@@ -174,11 +287,8 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       selectedTimeSlot: null,
       numberOfParticipants: 10,
       extraHours: 0,
-      includesKaraoke: false,
-      includesPhotographer: false,
-      includesFood: false,
-      includesDrinks: false,
-      includesSnacks: false,
+      selectedProducts: [],
+      packageSelections: new Map(),
       customerName: "",
       customerEmail: "",
       customerPhone: "",

@@ -8,7 +8,7 @@ import { Authenticated, Unauthenticated } from "convex/react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FcmTokenRegistrar } from "@/components/office/fcm-token-registrar";
 
-import { PricingControl } from "@/components/office/pricing-control";
+import ProductManagement from "@/components/office/product-management";
 import { OfficeNavbar } from "@/components/office/office-navbar";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { useEffect } from "react";
@@ -18,7 +18,13 @@ import { UserManagement } from "@/components/office/user-management";
 export const Route = createFileRoute("/site-control")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      tab: (search.tab as string) || "pricing",
+      tab: (search.tab as string) || "products",
+      // Product management search params - all optional
+      searchTerm: (search.searchTerm as string) || undefined,
+      categoryFilter: (search.categoryFilter as string) || undefined,
+      visibilityFilter: (search.visibilityFilter as string) || undefined,
+      sortBy: (search.sortBy as string) || undefined,
+      sortOrder: (search.sortOrder as "asc" | "desc") || undefined,
     };
   },
   component: RouteComponent,
@@ -60,14 +66,14 @@ function RouteComponent() {
               dir="rtl"
             >
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="pricing">מחירים</TabsTrigger>
+                <TabsTrigger value="products">מוצרים</TabsTrigger>
                 <TabsTrigger value="users">משתמשים</TabsTrigger>
               </TabsList>
               <TabsContent
-                value="pricing"
+                value="products"
                 className="animate-in fade-in-50 slide-in-from-bottom-4 duration-300"
               >
-                <PricingControl />
+                <ProductManagement />
               </TabsContent>
               <TabsContent
                 value="users"

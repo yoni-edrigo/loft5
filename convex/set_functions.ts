@@ -5,49 +5,110 @@ import { internal } from "./_generated/api";
 
 // ============ MUTATIONS ============
 
-// Helper function to validate client-calculated price
-const validatePrice = (pricing: any, args: any, calculatedPrice: number) => {
+// Helper function to validate client-calculated price using products
+const validatePrice = async (ctx: any, args: any, calculatedPrice: number) => {
   let expectedPrice = 0;
 
-  if (args.timeSlot === "evening") {
-    let perPersonCost = pricing.loftPerPerson;
-    if (args.includesFood) perPersonCost += pricing.foodPerPerson;
-    if (args.includesDrinks) perPersonCost += pricing.drinksPerPerson;
-    if (args.includesSnacks) perPersonCost += pricing.snacksPerPerson;
-    expectedPrice = args.numberOfParticipants * perPersonCost;
+  // Get all products for price calculation
+  const products = await ctx.db.query("products").collect();
+  const productsByKey = new Map();
+  for (const product of products) {
+    if (product.key) {
+      productsByKey.set(product.key, product);
+    }
+  }
 
-    if (args.extraHours && args.extraHours > 0) {
-      expectedPrice +=
-        args.numberOfParticipants *
-        args.extraHours *
-        pricing.extraHourPerPerson;
+  // Determine if karaoke and photographer are included from selectedProducts
+  let includesKaraoke = false;
+
+  for (const selection of args.selectedProducts || []) {
+    const product = await ctx.db.get(selection.productId);
+    if (product) {
+      if (product.key === "karaokeSystem") {
+        includesKaraoke = true;
+      }
+    }
+  }
+
+  if (args.timeSlot === "evening") {
+    // Base loft cost per person
+    const loftProduct = productsByKey.get("loftPerPerson");
+    if (loftProduct) {
+      expectedPrice += loftProduct.price * args.numberOfParticipants;
+    }
+
+    // Calculate costs from selected products
+    for (const selection of args.selectedProducts || []) {
+      const product = await ctx.db.get(selection.productId);
+      if (product) {
+        const quantity = selection.quantity || args.numberOfParticipants;
+        switch (product.unit) {
+          case "per_person":
+            expectedPrice += product.price * quantity;
+            break;
+          case "per_event":
+            expectedPrice += product.price;
+            break;
+          case "per_hour":
+            expectedPrice += product.price * (args.extraHours || 0);
+            break;
+          case "flat":
+            expectedPrice += product.price;
+            break;
+        }
+      }
+    }
+
+    // Apply minimum price
+    const minimumPrice = productsByKey.get("minimumPrice");
+    if (minimumPrice) {
+      expectedPrice = Math.max(expectedPrice, minimumPrice.price);
     }
   } else {
     // Afternoon slot base price
     if (args.numberOfParticipants > 25) {
-      expectedPrice = pricing.afternoonWithKaraoke;
+      const afternoonWithKaraoke = productsByKey.get("afternoonWithKaraoke");
+      if (afternoonWithKaraoke) {
+        expectedPrice = afternoonWithKaraoke.price;
+      }
     } else {
-      expectedPrice = args.includesKaraoke
-        ? pricing.afternoonWithKaraoke
-        : pricing.afternoonWithoutKaraoke;
+      const afternoonWithoutKaraoke = productsByKey.get(
+        "afternoonWithoutKaraoke",
+      );
+      const afternoonWithKaraoke = productsByKey.get("afternoonWithKaraoke");
+
+      if (includesKaraoke && afternoonWithKaraoke) {
+        expectedPrice = afternoonWithKaraoke.price;
+      } else if (afternoonWithoutKaraoke) {
+        expectedPrice = afternoonWithoutKaraoke.price;
+      }
     }
 
-    // Add per-person costs for food and drinks
-    if (args.includesFood)
-      expectedPrice += pricing.foodPerPerson * args.numberOfParticipants;
-    if (args.includesDrinks)
-      expectedPrice += pricing.drinksPerPerson * args.numberOfParticipants;
-    if (args.includesSnacks)
-      expectedPrice += pricing.snacksPerPerson * args.numberOfParticipants;
-  }
-  if (args.includesPhotographer) {
-    expectedPrice += pricing.photographerPrice;
+    // Calculate costs from selected products
+    for (const selection of args.selectedProducts || []) {
+      const product = await ctx.db.get(selection.productId);
+      if (product) {
+        const quantity = selection.quantity || args.numberOfParticipants;
+        switch (product.unit) {
+          case "per_person":
+            expectedPrice += product.price * quantity;
+            break;
+          case "per_event":
+            expectedPrice += product.price;
+            break;
+          case "per_hour":
+            expectedPrice += product.price * (args.extraHours || 0);
+            break;
+          case "flat":
+            expectedPrice += product.price;
+            break;
+        }
+      }
+    }
   }
 
-  // Only apply minimum price for evening events
-  if (args.timeSlot === "evening") {
-    expectedPrice = Math.max(expectedPrice, pricing.minimumPrice);
-  }
+  // Add photographer cost if included (this is now handled in selectedProducts loop above)
+  // The photographer cost is already included in the selectedProducts calculation
 
   return Math.abs(expectedPrice - calculatedPrice) < 1; // Allow for rounding
 };
@@ -64,9 +125,12 @@ export const createBooking = mutation({
     extraHours: v.optional(v.number()),
     includesKaraoke: v.boolean(),
     includesPhotographer: v.boolean(),
-    includesFood: v.boolean(),
-    includesDrinks: v.boolean(),
-    includesSnacks: v.boolean(),
+    selectedProducts: v.array(
+      v.object({
+        productId: v.id("products"),
+        quantity: v.optional(v.number()),
+      }),
+    ),
     totalPrice: v.number(), // Client-calculated price
   },
   handler: async (ctx, args) => {
@@ -99,20 +163,29 @@ export const createBooking = mutation({
     }
 
     // Validate client-calculated price
-    const pricing = await ctx.db.query("pricing").first();
-    if (!pricing) {
-      console.log("ERROR: Pricing not found");
-      throw new Error("Pricing not found");
-    }
-
-    const priceValidation = validatePrice(pricing, args, args.totalPrice);
+    const priceValidation = await validatePrice(ctx, args, args.totalPrice);
     console.log("Price validation result:", priceValidation);
 
     if (!priceValidation) {
       console.log("ERROR: Price validation failed");
       throw new Error("Price validation failed");
-    } // Create booking
+    }
+
+    // Create booking
     console.log("Creating booking with data:");
+
+    // Determine boolean fields from selectedProducts
+    let includesKaraoke = false;
+
+    for (const selection of args.selectedProducts || []) {
+      const product = await ctx.db.get(selection.productId);
+      if (product) {
+        if (product.key === "karaokeSystem") {
+          includesKaraoke = true;
+        }
+      }
+    }
+
     const bookingData = {
       customerName: args.customerName,
       customerEmail: args.customerEmail,
@@ -121,11 +194,8 @@ export const createBooking = mutation({
       timeSlot: args.timeSlot,
       numberOfParticipants: args.numberOfParticipants,
       extraHours: args.extraHours,
-      includesKaraoke: args.includesKaraoke,
-      includesPhotographer: args.includesPhotographer,
-      includesFood: args.includesFood,
-      includesDrinks: args.includesDrinks,
-      includesSnacks: args.includesSnacks,
+      includesKaraoke,
+      selectedProducts: args.selectedProducts,
       totalPrice: args.totalPrice,
       createdAt: Date.now(),
     };
@@ -133,7 +203,17 @@ export const createBooking = mutation({
       "Booking data to insert:",
       JSON.stringify(bookingData, null, 2),
     );
-    const bookingId = await ctx.db.insert("bookings", bookingData);
+
+    // Add the missing includesPhotographer field
+    const bookingDataWithPhotographer = {
+      ...bookingData,
+      includesPhotographer: false, // Default to false, can be updated later
+    };
+
+    const bookingId = await ctx.db.insert(
+      "bookings",
+      bookingDataWithPhotographer,
+    );
 
     // DON'T mark time slot as booked immediately - only mark when approved
     // This allows multiple pending bookings for the same slot
@@ -239,38 +319,6 @@ export const updateAvailability = mutation({
   },
 });
 
-// Update pricing (admin only)
-export const updatePricing = mutation({
-  args: {
-    minimumPrice: v.number(),
-    loftPerPerson: v.number(),
-    foodPerPerson: v.number(),
-    drinksPerPerson: v.number(),
-    snacksPerPerson: v.number(),
-    extraHourPerPerson: v.number(),
-    afternoonWithoutKaraoke: v.number(),
-    afternoonWithKaraoke: v.number(),
-    photographerPrice: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
-    const user = await ctx.db.get(userId);
-    if (!user?.roles?.includes("ADMIN")) {
-      throw new Error("Unauthorized: ADMIN role required");
-    }
-    const existing = await ctx.db.query("pricing").first();
-
-    if (existing) {
-      await ctx.db.patch(existing._id, args);
-    } else {
-      await ctx.db.insert("pricing", args);
-    }
-
-    return { success: true };
-  },
-});
-
 // Delete all data from all tables (admin only)
 export const deleteAllData = mutation({
   args: {},
@@ -282,8 +330,8 @@ export const deleteAllData = mutation({
       throw new Error("Unauthorized: ADMIN role required");
     }
     // Delete all existing records from all tables
-    const pricingRecords = await ctx.db.query("pricing").collect();
-    for (const record of pricingRecords) {
+    const productRecords = await ctx.db.query("products").collect();
+    for (const record of productRecords) {
       await ctx.db.delete(record._id);
     }
 
@@ -301,7 +349,7 @@ export const deleteAllData = mutation({
       success: true,
       message: "All data has been deleted from all tables",
       deletedCounts: {
-        pricing: pricingRecords.length,
+        products: productRecords.length,
         availability: availabilityRecords.length,
         bookings: bookingRecords.length,
       },

@@ -35,7 +35,17 @@ function RouteComponent() {
       if (roles.includes("DESIGNER")) {
         void navigate({ to: "/site-design", search: { tab: "services" } });
       } else if (roles.includes("ADMIN")) {
-        void navigate({ to: "/site-control", search: { tab: "pricing" } });
+        void navigate({
+          to: "/site-control",
+          search: {
+            tab: "pricing",
+            searchTerm: undefined,
+            categoryFilter: undefined,
+            visibilityFilter: undefined,
+            sortBy: undefined,
+            sortOrder: undefined,
+          } as any,
+        });
       }
     }
   }, [roles, navigate]);

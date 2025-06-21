@@ -8,7 +8,7 @@ import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Calendar, Users, Clock } from "lucide-react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -32,11 +32,17 @@ export function BookingDetailsDialog({
   booking,
 }: BookingDetailsDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [markAsPaid, setMarkAsPaid] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+
+  // Get all products to display selected product names
+  const products = useQuery(api.products.getProducts, {
+    onlyVisible: true,
+  });
+
   const approveBooking = useMutation(api.set_functions.approveBooking);
   const declineBooking = useMutation(api.set_functions.declineBooking);
-  const [markAsPaid, setMarkAsPaid] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<string>("");
-  const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
   if (!booking) return null;
 
@@ -53,9 +59,7 @@ export function BookingDetailsDialog({
         args.paymentMethod = paymentMethod;
       }
       await approveBooking(args);
-      toast.success("ההזמנה אושרה!", {
-        description: "הודעה תישלח ללקוח.",
-      });
+      toast.success("ההזמנה אושרה בהצלחה!");
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to approve booking:", error);
@@ -71,9 +75,7 @@ export function BookingDetailsDialog({
     setIsSubmitting(true);
     try {
       await declineBooking({ id: booking._id });
-      toast.success("ההזמנה נדחתה!", {
-        description: "הודעה תישלח ללקוח.",
-      });
+      toast.success("ההזמנה נדחתה בהצלחה!");
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to decline booking:", error);
@@ -84,6 +86,49 @@ export function BookingDetailsDialog({
       setIsSubmitting(false);
     }
   };
+
+  const handleMarkAsPaid = async () => {
+    if (!markAsPaid || !paymentMethod) {
+      toast.error("נא לבחור אמצעי תשלום");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await approveBooking({
+        id: booking._id,
+        paidAt: Date.now(),
+        paymentMethod,
+      });
+      toast.success("התשלום סומן בהצלחה!");
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Failed to mark booking as paid:", error);
+      toast.error("שגיאה", {
+        description: "אירעה שגיאה בסימון התשלום. נא לנסות שוב.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Get selected product details
+  const getSelectedProductDetails = () => {
+    if (!products || !booking.selectedProducts) return [];
+
+    return booking.selectedProducts
+      .map((selection) => {
+        const product = products.find((p) => p._id === selection.productId);
+        return {
+          product,
+          quantity: selection.quantity,
+          price: product ? product.price * (selection.quantity || 1) : 0,
+        };
+      })
+      .filter((item) => item.product); // Only return items with valid products
+  };
+
+  const selectedProductDetails = getSelectedProductDetails();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -180,12 +225,12 @@ export function BookingDetailsDialog({
 
           {/* Services */}
           <div className="space-y-3">
-            {" "}
             <div className="flex items-center gap-2 mb-3">
               <Clock className="h-4 w-4" />
               <span className="font-medium">שירותים נבחרים</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
+              {/* Legacy boolean fields (for backward compatibility) */}
               {(isLargeAfternoonGroup || booking.includesKaraoke) && (
                 <Badge variant="default">
                   קריוקי
@@ -199,22 +244,38 @@ export function BookingDetailsDialog({
                 <Badge variant="default">צלם</Badge>
               )}
 
-              {booking.includesFood && <Badge variant="default">אוכל</Badge>}
-
-              {booking.includesDrinks && (
-                <Badge variant="default">משקאות</Badge>
-              )}
-
-              {booking.includesSnacks && (
-                <Badge variant="default">חטיפים</Badge>
+              {/* New dynamic product selections */}
+              {selectedProductDetails.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-muted-foreground">
+                    מוצרים נבחרים:
+                  </div>
+                  {selectedProductDetails.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center text-sm"
+                    >
+                      <span>
+                        {item.product?.nameHe}
+                        {item.quantity && item.quantity > 1 && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            (x{item.quantity})
+                          </span>
+                        )}
+                      </span>
+                      <span className="font-medium">
+                        {formatPrice(item.price)} ₪
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
 
               {!isLargeAfternoonGroup &&
                 !booking.includesKaraoke &&
                 !booking.includesPhotographer &&
-                !booking.includesFood &&
-                !booking.includesDrinks &&
-                !booking.includesSnacks && (
+                selectedProductDetails.length === 0 && (
                   <span className="text-muted-foreground">
                     לא נבחרו שירותים נוספים
                   </span>
@@ -277,57 +338,71 @@ export function BookingDetailsDialog({
                         <option value="">בחר אמצעי תשלום</option>
                         <option value="cash">מזומן</option>
                         <option value="credit">אשראי</option>
-                        <option value="bit">ביט</option>
-                        <option value="bank_transfer">העברה בנקאית</option>
-                        <option value="other">אחר</option>
+                        <option value="transfer">העברה בנקאית</option>
+                        <option value="check">צ'ק</option>
                       </select>
                     </div>
                   )}
                 </div>
               )}
-              {booking.paymentMethod && booking.paidAt && (
-                <div className="flex justify-between">
-                  <span>אמצעי תשלום:</span>
-                  <span className="font-medium">
-                    {(() => {
-                      switch (booking.paymentMethod) {
-                        case "cash":
-                          return "מזומן";
-                        case "credit":
-                          return "אשראי";
-                        case "bit":
-                          return "ביט";
-                        case "bank_transfer":
-                          return "העברה בנקאית";
-                        case "other":
-                          return "אחר";
-                        default:
-                          return booking.paymentMethod;
-                      }
-                    })()}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
-        </CardContent>{" "}
-        {/* Actions */}
-        <div className="flex gap-4 bottom-0 bg-background p-4 border-t">
-          <Button
-            variant="destructive"
-            onClick={() => void handleDecline()}
-            disabled={isSubmitting}
-          >
-            דחה הזמנה
-          </Button>
-          <Button
-            variant="default"
-            onClick={() => void handleApprove()}
-            disabled={isSubmitting}
-          >
-            אשר הזמנה
-          </Button>
-        </div>
+
+          {/* Action Buttons */}
+          {!booking.approvedAt && !booking.declinedAt && (
+            <div className="flex gap-2">
+              <Button
+                onClick={() => void handleApprove()}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                אישור
+              </Button>
+              <Button
+                onClick={() => void handleDecline()}
+                disabled={isSubmitting}
+                variant="destructive"
+                className="flex-1"
+              >
+                דחייה
+              </Button>
+            </div>
+          )}
+
+          {/* Payment Button */}
+          {booking.approvedAt && !booking.paidAt && (
+            <Button
+              onClick={() => void handleMarkAsPaid()}
+              disabled={isSubmitting || !markAsPaid || !paymentMethod}
+              className="w-full"
+            >
+              סמן כשולם
+            </Button>
+          )}
+
+          {/* Status Display */}
+          {booking.approvedAt && (
+            <div className="text-center">
+              <Badge className="bg-green-500 text-white">
+                אושר בתאריך{" "}
+                {format(new Date(booking.approvedAt), "dd/MM/yyyy", {
+                  locale: he,
+                })}
+              </Badge>
+            </div>
+          )}
+
+          {booking.declinedAt && (
+            <div className="text-center">
+              <Badge variant="destructive">
+                נדחה בתאריך{" "}
+                {format(new Date(booking.declinedAt), "dd/MM/yyyy", {
+                  locale: he,
+                })}
+              </Badge>
+            </div>
+          )}
+        </CardContent>
       </DialogContent>
     </Dialog>
   );

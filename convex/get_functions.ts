@@ -4,12 +4,71 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ============ QUERIES ============
 
-// Get current pricing structure (fetch once, use for client-side calculations)
+// Get all products (replaces getPricing)
+// Public: No role check
+export const getProducts = query({
+  args: {
+    category: v.optional(v.string()),
+    packageKey: v.optional(v.string()),
+    onlyVisible: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    let products;
+
+    if (args.category) {
+      products = await ctx.db
+        .query("products")
+        .withIndex("by_category")
+        .filter((q) => q.eq(q.field("category"), args.category))
+        .collect();
+    } else if (args.packageKey) {
+      products = await ctx.db
+        .query("products")
+        .withIndex("by_package")
+        .filter((q) => q.eq(q.field("packageKey"), args.packageKey))
+        .collect();
+    } else {
+      products = await ctx.db.query("products").collect();
+    }
+
+    // Apply visibility filter if requested
+    if (args.onlyVisible) {
+      products = products.filter((product) => product.visible);
+    }
+
+    return products.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  },
+});
+
+// Get product by key (for backward compatibility)
+// Public: No role check
+export const getProductByKey = query({
+  args: { key: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("products")
+      .withIndex("by_key")
+      .filter((q) => q.eq(q.field("key"), args.key))
+      .first();
+  },
+});
+
+// Legacy function for backward compatibility - returns products in pricing format
 // Public: No role check
 export const getPricing = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("pricing").first();
+    const products = await ctx.db.query("products").collect();
+    const pricing: any = {};
+
+    // Convert products to pricing format for backward compatibility
+    for (const product of products) {
+      if (product.key) {
+        pricing[product.key] = product.price;
+      }
+    }
+
+    return pricing;
   },
 });
 

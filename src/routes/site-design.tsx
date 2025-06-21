@@ -38,7 +38,17 @@ function RouteComponent() {
           search: { tab: "pending", bookingId: undefined },
         });
       } else if (roles.includes("ADMIN")) {
-        void navigate({ to: "/site-control", search: { tab: "pricing" } });
+        void navigate({
+          to: "/site-control",
+          search: {
+            tab: "pricing",
+            searchTerm: undefined,
+            categoryFilter: undefined,
+            visibilityFilter: undefined,
+            sortBy: undefined,
+            sortOrder: undefined,
+          } as any,
+        });
       }
     }
   }, [roles, navigate]);

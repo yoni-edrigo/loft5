@@ -28,6 +28,7 @@ export default defineSchema({
       ),
     ),
   }).index("email", ["email"]),
+
   // Customer bookings
   bookings: defineTable({
     customerName: v.string(),
@@ -39,9 +40,14 @@ export default defineSchema({
     extraHours: v.optional(v.number()), // For evening events
     includesKaraoke: v.boolean(),
     includesPhotographer: v.boolean(),
-    includesFood: v.boolean(),
-    includesDrinks: v.boolean(),
-    includesSnacks: v.boolean(),
+    // REMOVED: includesFood, includesDrinks, includesSnacks
+    // ADDED: Dynamic product selections
+    selectedProducts: v.array(
+      v.object({
+        productId: v.id("products"),
+        quantity: v.optional(v.number()),
+      }),
+    ),
     totalPrice: v.number(),
     createdAt: v.number(),
     approvedAt: v.optional(v.number()), // Timestamp when booking was approved
@@ -50,25 +56,34 @@ export default defineSchema({
     paymentMethod: v.optional(v.string()), // Payment method used
   }),
 
-  // Fixed pricing structure
-  pricing: defineTable({
-    // Base prices
-    minimumPrice: v.number(), // 1200
-
-    // Evening event per person (4 hours base)
-    loftPerPerson: v.number(), // 100
-    foodPerPerson: v.number(), // 70
-    drinksPerPerson: v.number(), // 70
-    snacksPerPerson: v.number(), // 30
-    extraHourPerPerson: v.number(), // 35
-
-    // Afternoon event (up to 25 people)
-    afternoonWithoutKaraoke: v.number(), // 700
-    afternoonWithKaraoke: v.number(), // 1500
-
-    // Add-ons
-    photographerPrice: v.number(), // 1500
-  }),
+  // Products and services with pricing - NEW TABLE
+  products: defineTable({
+    name: v.optional(v.string()),
+    nameHe: v.string(), // Hebrew name (required)
+    description: v.optional(v.string()),
+    descriptionHe: v.string(), // Hebrew description (required)
+    price: v.number(),
+    unit: v.union(
+      v.literal("per_person"),
+      v.literal("per_event"),
+      v.literal("per_hour"),
+      v.literal("flat"),
+    ),
+    category: v.string(), // "base", "food", "drinks", "addons", "snacks"
+    packageKey: v.optional(v.string()), // Groups mutually exclusive options
+    isDefaultInPackage: v.optional(v.boolean()), // Which option is default in a package
+    key: v.optional(v.string()), // unique key for programmatic access
+    visible: v.boolean(),
+    order: v.optional(v.number()),
+    parentId: v.optional(v.id("products")), // For sub-menus
+    availableSlots: v.optional(
+      v.array(v.union(v.literal("afternoon"), v.literal("evening"))),
+    ),
+  })
+    .index("by_key", ["key"])
+    .index("by_package", ["packageKey"])
+    .index("by_parent_category", ["parentId", "category"])
+    .index("by_category", ["category"]),
 
   // Calendar availability
   availability: defineTable({

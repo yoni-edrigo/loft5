@@ -19,10 +19,44 @@ export type DateAvailability = Omit<
   "_id" | "_creationTime"
 >;
 
+// Product types
+export type ProductDoc = Omit<Doc<"products">, "name" | "description"> & {
+  name?: string;
+  description?: string;
+  nameHe: string;
+  descriptionHe: string;
+  availableSlots?: Array<"afternoon" | "evening">;
+};
+export type ProductData = Omit<ProductDoc, "_id" | "_creationTime">;
+
+// Selected product for booking
+export interface SelectedProduct {
+  productId: Id<"products">;
+  quantity?: number;
+}
+
+// Package selection (for mutually exclusive options)
+export interface PackageSelection {
+  packageKey: string;
+  productId: Id<"products">;
+  quantity?: number;
+}
+
 // Convex data types
-export type PricingDoc = Doc<"pricing">;
 export type BookingDoc = Doc<"bookings">;
 
 // Client-side expanded types
-export type PricingData = Omit<PricingDoc, "_id" | "_creationTime">;
 export type BookingData = Omit<BookingDoc, "_id" | "_creationTime">;
+
+// Legacy pricing type for backward compatibility
+export interface LegacyPricingData {
+  minimumPrice: number;
+  loftPerPerson: number;
+  foodPerPerson: number;
+  drinksPerPerson: number;
+  snacksPerPerson: number;
+  extraHourPerPerson: number;
+  afternoonWithoutKaraoke: number;
+  afternoonWithKaraoke: number;
+  photographerPrice: number;
+}

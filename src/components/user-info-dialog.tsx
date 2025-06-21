@@ -84,15 +84,13 @@ export function UserInfoDialog({ open, onOpenChange }: UserInfoDialogProps) {
         customerName: values.customerName,
         customerEmail: values.customerEmail,
         customerPhone: values.customerPhone,
-        eventDate: bookingData.selectedDate, // Remove .split("T")[0] since it's already YYYY-MM-DD
+        eventDate: bookingData.selectedDate,
         timeSlot: bookingData.selectedTimeSlot,
         numberOfParticipants: bookingData.numberOfParticipants,
         extraHours: bookingData.extraHours || 0,
-        includesKaraoke: bookingData.includesKaraoke,
-        includesPhotographer: bookingData.includesPhotographer,
-        includesFood: bookingData.includesFood,
-        includesDrinks: bookingData.includesDrinks,
-        includesSnacks: bookingData.includesSnacks,
+        includesKaraoke: false,
+        includesPhotographer: false,
+        selectedProducts: bookingData.selectedProducts || [],
         totalPrice: bookingData.totalPrice,
       });
 

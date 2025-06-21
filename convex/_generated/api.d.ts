@@ -19,6 +19,7 @@ import type * as get_functions from "../get_functions.js";
 import type * as http from "../http.js";
 import type * as office_images from "../office_images.js";
 import type * as office_images_admin from "../office_images_admin.js";
+import type * as products from "../products.js";
 import type * as seed from "../seed.js";
 import type * as send_push from "../send_push.js";
 import type * as services from "../services.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   office_images: typeof office_images;
   office_images_admin: typeof office_images_admin;
+  products: typeof products;
   seed: typeof seed;
   send_push: typeof send_push;
   services: typeof services;

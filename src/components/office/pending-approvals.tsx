@@ -20,6 +20,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export function PendingApprovals() {
   const bookings = useQuery(api.get_functions.getPendingBookings);
+  const products = useQuery(api.products.getProducts, {
+    onlyVisible: true,
+  });
   const [selectedBooking, setSelectedBooking] = useState<BookingDoc | null>(
     null,
   );
@@ -35,6 +38,18 @@ export function PendingApprovals() {
     );
   }
 
+  // Helper function to get selected product names
+  const getSelectedProductNames = (booking: BookingDoc) => {
+    if (!products || !booking.selectedProducts) return [];
+
+    return booking.selectedProducts
+      .map((selection) => {
+        const product = products.find((p) => p._id === selection.productId);
+        return product?.nameHe || "מוצר לא ידוע";
+      })
+      .filter((name) => name !== "מוצר לא ידוע");
+  };
+
   return (
     <>
       <Card>
@@ -48,6 +63,7 @@ export function PendingApprovals() {
                 const isAfternoon = booking.timeSlot === "afternoon";
                 const isLargeAfternoonGroup =
                   isAfternoon && booking.numberOfParticipants > 25;
+                const selectedProductNames = getSelectedProductNames(booking);
 
                 return (
                   <div
@@ -86,15 +102,10 @@ export function PendingApprovals() {
                         ...(booking.includesPhotographer
                           ? [{ label: "צלם", color: "secondary" as const }]
                           : []),
-                        ...(booking.includesFood
-                          ? [{ label: "אוכל", color: "secondary" as const }]
-                          : []),
-                        ...(booking.includesDrinks
-                          ? [{ label: "משקאות", color: "secondary" as const }]
-                          : []),
-                        ...(booking.includesSnacks
-                          ? [{ label: "חטיפים", color: "secondary" as const }]
-                          : []),
+                        ...selectedProductNames.map((name) => ({
+                          label: name,
+                          color: "secondary" as const,
+                        })),
                       ].map((tag, i) => (
                         <span key={i} className="truncate max-w-[60px] block">
                           <Badge
@@ -127,6 +138,7 @@ export function PendingApprovals() {
                   const isAfternoon = booking.timeSlot === "afternoon";
                   const isLargeAfternoonGroup =
                     isAfternoon && booking.numberOfParticipants > 25;
+                  const selectedProductNames = getSelectedProductNames(booking);
 
                   return (
                     <TableRow
@@ -159,21 +171,15 @@ export function PendingApprovals() {
                               צלם
                             </Badge>
                           )}
-                          {booking.includesFood && (
-                            <Badge variant="secondary" className="text-xs">
-                              אוכל
+                          {selectedProductNames.map((name, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {name}
                             </Badge>
-                          )}
-                          {booking.includesDrinks && (
-                            <Badge variant="secondary" className="text-xs">
-                              משקאות
-                            </Badge>
-                          )}
-                          {booking.includesSnacks && (
-                            <Badge variant="secondary" className="text-xs">
-                              חטיפים
-                            </Badge>
-                          )}
+                          ))}
                         </div>
                       </TableCell>
                       <TableCell>₪{formatPrice(booking.totalPrice)}</TableCell>

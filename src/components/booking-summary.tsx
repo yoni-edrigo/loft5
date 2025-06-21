@@ -25,15 +25,13 @@ export default function BookingSummary() {
 
   const {
     pricing,
+    products,
     selectedDate,
     selectedTimeSlot,
     numberOfParticipants,
     extraHours,
-    includesKaraoke,
-    includesPhotographer,
-    includesFood,
-    includesDrinks,
-    includesSnacks,
+    selectedProducts,
+    packageSelections,
     calculateTotalPrice,
   } = useBookingStore();
 
@@ -59,24 +57,10 @@ export default function BookingSummary() {
       if (numberOfParticipants > 25) {
         return pricing.afternoonWithKaraoke; // Large groups require karaoke
       }
-      return includesKaraoke
-        ? pricing.afternoonWithKaraoke
-        : pricing.afternoonWithoutKaraoke;
+      return pricing.afternoonWithoutKaraoke;
     } else {
       return pricing.loftPerPerson * numberOfParticipants;
     }
-  };
-
-  const getFoodPrice = () => {
-    return includesFood ? pricing.foodPerPerson * numberOfParticipants : 0;
-  };
-
-  const getDrinksPrice = () => {
-    return includesDrinks ? pricing.drinksPerPerson * numberOfParticipants : 0;
-  };
-
-  const getSnacksPrice = () => {
-    return includesSnacks ? pricing.snacksPerPerson * numberOfParticipants : 0;
   };
 
   const getExtraHoursPrice = () => {
@@ -86,27 +70,51 @@ export default function BookingSummary() {
     return 0;
   };
 
-  const getPhotographerPrice = () => {
-    return includesPhotographer ? pricing.photographerPrice : 0;
+  const basePrice = getBasePrice();
+  const extraHoursPrice = getExtraHoursPrice();
+
+  // Calculate product prices
+  const getProductPrices = () => {
+    const prices: { [key: string]: number } = {};
+    let totalProductPrice = 0;
+
+    // Calculate prices for all selected products
+    selectedProducts.forEach((selection) => {
+      const product = products?.find((p) => p._id === selection.productId);
+      if (product) {
+        const quantity = selection.quantity || numberOfParticipants;
+        let price = 0;
+
+        switch (product.unit) {
+          case "per_person":
+            price = product.price * quantity;
+            break;
+          case "per_event":
+            price = product.price;
+            break;
+          case "per_hour":
+            price = product.price * extraHours;
+            break;
+          case "flat":
+            price = product.price;
+            break;
+        }
+
+        prices[selection.productId] = price;
+        totalProductPrice += price;
+      }
+    });
+
+    return { prices, totalProductPrice };
   };
 
-  const basePrice = getBasePrice();
-  const foodPrice = getFoodPrice();
-  const drinksPrice = getDrinksPrice();
-  const snacksPrice = getSnacksPrice();
-  const extraHoursPrice = getExtraHoursPrice();
-  const photographerPrice = getPhotographerPrice();
+  const { prices: productPrices, totalProductPrice } = getProductPrices();
 
   // Check if minimum price is applied
-  const calculatedPrice =
-    basePrice +
-    foodPrice +
-    drinksPrice +
-    snacksPrice +
-    extraHoursPrice +
-    photographerPrice;
+  const calculatedPrice = basePrice + totalProductPrice + extraHoursPrice;
   const isMinimumPriceApplied =
     totalPrice === pricing.minimumPrice && totalPrice > calculatedPrice;
+
   const handleContinue = () => {
     if (!selectedDate || !selectedTimeSlot) {
       toast.error("שגיאה", {
@@ -127,11 +135,8 @@ export default function BookingSummary() {
       selectedTimeSlot,
       numberOfParticipants,
       extraHours,
-      includesKaraoke,
-      includesPhotographer,
-      includesFood,
-      includesDrinks,
-      includesSnacks,
+      selectedProducts,
+      packageSelections: Array.from(packageSelections.entries()),
       totalPrice,
       timestamp: Date.now(),
     };
@@ -208,44 +213,43 @@ export default function BookingSummary() {
                   {isAfternoon
                     ? isLargeAfternoonGroup
                       ? `אירוע צהריים (מעל 25 איש)`
-                      : includesKaraoke
-                        ? `אירוע צהריים + קריוקי`
-                        : `אירוע צהריים (חלל בלבד)`
+                      : `אירוע צהריים (חלל בלבד)`
                     : `חלל ערב (${numberOfParticipants} איש)`}
                 </span>
                 <span className="font-medium">{formatPrice(basePrice)} ₪</span>
               </div>
 
-              {/* Food & Drinks as a group */}
-              {(foodPrice > 0 || drinksPrice > 0 || snacksPrice > 0) && (
+              {/* Products as a group */}
+              {totalProductPrice > 0 && (
                 <div className="mt-2 space-y-1">
                   <div className="flex justify-between items-center font-medium">
-                    <span>אוכל ומשקאות ({numberOfParticipants} איש):</span>
-                    <span>
-                      {formatPrice(foodPrice + drinksPrice + snacksPrice)} ₪
-                    </span>
+                    <span>שירותים נוספים:</span>
+                    <span>{formatPrice(totalProductPrice)} ₪</span>
                   </div>
 
-                  {foodPrice > 0 && (
-                    <div className="flex justify-between items-center text-sm text-muted-foreground">
-                      <span className="mr-4">• אוכל</span>
-                      <span>{formatPrice(foodPrice)} ₪</span>
-                    </div>
-                  )}
-
-                  {drinksPrice > 0 && (
-                    <div className="flex justify-between items-center text-sm text-muted-foreground">
-                      <span className="mr-4">• משקאות</span>
-                      <span>{formatPrice(drinksPrice)} ₪</span>
-                    </div>
-                  )}
-
-                  {snacksPrice > 0 && (
-                    <div className="flex justify-between items-center text-sm text-muted-foreground">
-                      <span className="mr-4">• חטיפים</span>
-                      <span>{formatPrice(snacksPrice)} ₪</span>
-                    </div>
-                  )}
+                  {/* Show selected products */}
+                  {selectedProducts.map((selection) => {
+                    const product = products?.find(
+                      (p) => p._id === selection.productId,
+                    );
+                    if (product) {
+                      return (
+                        <div
+                          key={selection.productId}
+                          className="flex justify-between items-center text-sm text-muted-foreground"
+                        >
+                          <span className="mr-4">• {product.nameHe}</span>
+                          <span>
+                            {formatPrice(
+                              productPrices[selection.productId] || 0,
+                            )}{" "}
+                            ₪
+                          </span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
                 </div>
               )}
 
@@ -255,16 +259,6 @@ export default function BookingSummary() {
                   <span>שעות נוספות ({extraHours})</span>
                   <span className="font-medium">
                     {formatPrice(extraHoursPrice)} ₪
-                  </span>
-                </div>
-              )}
-
-              {/* Photographer */}
-              {photographerPrice > 0 && (
-                <div className="flex justify-between items-center">
-                  <span>צלם מקצועי</span>
-                  <span className="font-medium">
-                    {formatPrice(photographerPrice)} ₪
                   </span>
                 </div>
               )}

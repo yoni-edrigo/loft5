@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { useBookingStore } from "@/store/booking-store";
+import type { ProductDoc } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -12,33 +13,55 @@ import {
   Users,
   Clock,
   Camera,
-  Music,
   Plus,
   UtensilsCrossed,
   Wine,
   Cookie,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Id } from "../../convex/_generated/dataModel";
 
 export default function BookingOptions() {
   const {
     pricing,
+    products,
     selectedTimeSlot,
     numberOfParticipants,
     extraHours,
-    includesKaraoke,
-    includesPhotographer,
-    includesFood,
-    includesDrinks,
-    includesSnacks,
+    packageSelections,
     setNumberOfParticipants,
     setExtraHours,
-    setIncludesKaraoke,
-    setIncludesPhotographer,
-    setIncludesFood,
-    setIncludesDrinks,
-    setIncludesSnacks,
+    selectProduct,
+    addStandaloneProduct,
+    removeStandaloneProduct,
+    isProductSelected,
   } = useBookingStore();
+
+  // Filter products by category and slot
+  const slotFilter = (p: ProductDoc) => {
+    if (!selectedTimeSlot) return true;
+    return !p.availableSlots || p.availableSlots.includes(selectedTimeSlot);
+  };
+  const safeProducts = products ?? [];
+  const foodPackages = safeProducts.filter(
+    (p) =>
+      p.category === "food_package" &&
+      p.packageKey === "food_package" &&
+      slotFilter(p),
+  );
+  const drinksPackages = safeProducts.filter(
+    (p) =>
+      p.category === "drinks_package" &&
+      p.packageKey === "drinks_package" &&
+      slotFilter(p),
+  );
+  const snacks = safeProducts.filter(
+    (p) => p.category === "snacks" && slotFilter(p),
+  );
+  const addons = safeProducts.filter(
+    (p) => p.category === "addons" && slotFilter(p),
+  );
 
   if (!selectedTimeSlot || !pricing) {
     return (
@@ -195,133 +218,136 @@ export default function BookingOptions() {
 
           <Separator />
 
-          {/* Food & Drinks Options */}
+          {/* Food & Drinks Options (Dynamic) */}
           <div className="space-y-4">
             <Label className="text-base">אוכל ומשקאות (אופציונלי)</Label>
 
-            {/* Food */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <UtensilsCrossed className="h-5 w-5 text-orange-600" />
-                <div>
-                  <div className="font-medium">אוכל</div>
-                  <div className="text-sm text-muted-foreground">
-                    ארוחה מלאה לכל משתתף
-                  </div>
+            {/* Food Package Radio Group */}
+            {foodPackages.length > 0 && (
+              <div className="p-4 border rounded-lg">
+                <div className="font-medium mb-2 flex items-center gap-2">
+                  <UtensilsCrossed className="h-5 w-5 text-orange-600" />
+                  חבילת אוכל
                 </div>
+                <RadioGroup
+                  value={packageSelections.get("food_package")?.productId || ""}
+                  onValueChange={(val) =>
+                    selectProduct("food_package", val as Id<"products">)
+                  }
+                  className="flex flex-col gap-2"
+                >
+                  {foodPackages.map((p) => (
+                    <Label key={p._id} className="flex items-center gap-2">
+                      <RadioGroupItem value={p._id} />
+                      <span className="font-medium">{p.nameHe}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {p.descriptionHe}
+                      </span>
+                      <span className="ml-auto text-sm font-medium">
+                        ₪{formatPrice(p.price)} לאדם
+                      </span>
+                    </Label>
+                  ))}
+                </RadioGroup>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">
-                  ₪{formatPrice(pricing.foodPerPerson)} לאדם
-                </span>
-                <Switch
-                  checked={includesFood}
-                  onCheckedChange={setIncludesFood}
-                />
-              </div>
-            </div>
+            )}
 
-            {/* Drinks */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Wine className="h-5 w-5 text-purple-600" />
-                <div>
-                  <div className="font-medium">משקאות</div>
-                  <div className="text-sm text-muted-foreground">
-                    משקאות אלכוהוליים ולא אלכוהוליים
-                  </div>
+            {/* Drinks Package Radio Group */}
+            {drinksPackages.length > 0 && (
+              <div className="p-4 border rounded-lg">
+                <div className="font-medium mb-2 flex items-center gap-2">
+                  <Wine className="h-5 w-5 text-purple-600" />
+                  חבילת משקאות
                 </div>
+                <RadioGroup
+                  value={
+                    packageSelections.get("drinks_package")?.productId || ""
+                  }
+                  onValueChange={(val) =>
+                    selectProduct("drinks_package", val as Id<"products">)
+                  }
+                  className="flex flex-col gap-2"
+                >
+                  {drinksPackages.map((p) => (
+                    <Label key={p._id} className="flex items-center gap-2">
+                      <RadioGroupItem value={p._id} />
+                      <span className="font-medium">{p.nameHe}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {p.descriptionHe}
+                      </span>
+                      <span className="ml-auto text-sm font-medium">
+                        ₪{formatPrice(p.price)} לאדם
+                      </span>
+                    </Label>
+                  ))}
+                </RadioGroup>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">
-                  ₪{formatPrice(pricing.drinksPerPerson)} לאדם
-                </span>
-                <Switch
-                  checked={includesDrinks}
-                  onCheckedChange={setIncludesDrinks}
-                />
-              </div>
-            </div>
+            )}
 
-            {/* Snacks */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Cookie className="h-5 w-5 text-yellow-600" />
-                <div>
-                  <div className="font-medium">חטיפים</div>
-                  <div className="text-sm text-muted-foreground">
-                    חטיפים מלוחים ומתוקים
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">
-                  ₪{formatPrice(pricing.snacksPerPerson)} לאדם
-                </span>
-                <Switch
-                  checked={includesSnacks}
-                  onCheckedChange={setIncludesSnacks}
-                />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Additional Add-ons */}
-          <div className="space-y-4">
-            <Label className="text-base">תוספות נוספות</Label>
-
-            {/* Karaoke (Afternoon only and not large group) */}
-            {isAfternoon && numberOfParticipants <= 25 && (
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+            {/* Snacks Switches */}
+            {snacks.map((p) => (
+              <div
+                key={p._id}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
                 <div className="flex items-center gap-3">
-                  <Music className="h-5 w-5 text-purple-600" />
+                  <Cookie className="h-5 w-5 text-yellow-600" />
                   <div>
-                    <div className="font-medium">קריוקי</div>
+                    <div className="font-medium">{p.nameHe}</div>
                     <div className="text-sm text-muted-foreground">
-                      מערכת קריוקי מקצועית
+                      {p.descriptionHe}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium">
-                    ₪
-                    {formatPrice(
-                      pricing.afternoonWithKaraoke -
-                        pricing.afternoonWithoutKaraoke,
-                    )}
+                    ₪{formatPrice(p.price)} לאדם
                   </span>
                   <Switch
-                    checked={includesKaraoke}
-                    onCheckedChange={setIncludesKaraoke}
+                    checked={isProductSelected(p._id)}
+                    onCheckedChange={(checked) =>
+                      checked
+                        ? addStandaloneProduct(p._id)
+                        : removeStandaloneProduct(p._id)
+                    }
                   />
                 </div>
               </div>
-            )}
+            ))}
 
-            {/* Photographer */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <Camera className="h-5 w-5 text-green-600" />
-                <div>
-                  <div className="font-medium">צלם מקצועי</div>
-                  <div className="text-sm text-muted-foreground">
-                    צילום מקצועי לאורך האירוע
+            {/* Add-ons Switches */}
+            {addons.map((p) => (
+              <div
+                key={p._id}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <Camera className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <div className="font-medium">{p.nameHe}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {p.descriptionHe}
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium">
+                    ₪{formatPrice(p.price)}
+                  </span>
+                  <Switch
+                    checked={isProductSelected(p._id)}
+                    onCheckedChange={(checked) =>
+                      checked
+                        ? addStandaloneProduct(p._id)
+                        : removeStandaloneProduct(p._id)
+                    }
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">
-                  ₪{formatPrice(pricing.photographerPrice)}
-                </span>
-                <Switch
-                  checked={includesPhotographer}
-                  onCheckedChange={setIncludesPhotographer}
-                />
-              </div>
-            </div>
+            ))}
           </div>
+
+          <Separator />
         </CardContent>
       </Card>
     </motion.div>

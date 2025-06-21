@@ -48,7 +48,7 @@ const navigationLinks = [
     search: { tab: "pricing" },
     submenu: true,
     items: [
-      { label: "מחירים", href: "/site-control", search: { tab: "pricing" } },
+      { label: "מוצרים", href: "/site-control", search: { tab: "products" } },
       { label: "משתמשים", href: "/site-control", search: { tab: "users" } },
     ],
     roles: ["ADMIN"],

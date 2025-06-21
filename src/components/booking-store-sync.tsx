@@ -6,7 +6,11 @@ import { useEffect } from "react";
 
 export function BookingStoreSync() {
   const pricing = useQuery(api.get_functions.getPricing);
+  const products = useQuery(api.get_functions.getProducts, {
+    onlyVisible: true,
+  });
   const setPricing = useBookingStore((state) => state.setPricing);
+  const setProducts = useBookingStore((state) => state.setProducts);
 
   // Get availability for current month and next month
   const currentDate = new Date();
@@ -39,6 +43,23 @@ export function BookingStoreSync() {
       });
     }
   }, [pricing, setPricing]);
+
+  // Update store with products data
+  useEffect(() => {
+    console.log("[BookingStoreSync] Products data received:", products);
+    if (products) {
+      setProducts(products);
+      console.log("[BookingStoreSync] Updated store with products:", {
+        count: products.length,
+        categories: [...new Set(products.map((p) => p.category))],
+        packages: [
+          ...new Set(
+            products.filter((p) => p.packageKey).map((p) => p.packageKey),
+          ),
+        ],
+      });
+    }
+  }, [products, setProducts]);
 
   // Update store with availability data
   useEffect(() => {
