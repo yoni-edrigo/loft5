@@ -28,6 +28,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Use the generated type for a service document
 export type ServiceDoc = Doc<"services">;
@@ -41,6 +42,7 @@ export function ServicesControl() {
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addIconPickerOpen, setAddIconPickerOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // For adding new service
   const [form, setForm] = useState<Partial<ServiceDoc>>({
@@ -51,6 +53,8 @@ export function ServicesControl() {
     order: 0,
     visible: true,
   });
+
+  const isMobile = useIsMobile();
 
   // Utility to pick only allowed fields for setService
   function pickServiceFields(obj: Partial<ServiceDoc>) {
@@ -67,11 +71,13 @@ export function ServicesControl() {
   const startEdit = (service: ServiceDoc) => {
     setEditingKey(service.key);
     setEditForm({ ...service });
+    setEditDialogOpen(true);
   };
 
   const cancelEdit = () => {
     setEditingKey(null);
     setEditForm(null);
+    setEditDialogOpen(false);
   };
 
   const saveEdit = useCallback(async () => {
@@ -82,6 +88,7 @@ export function ServicesControl() {
     });
     setEditingKey(null);
     setEditForm(null);
+    setEditDialogOpen(false);
   }, [editForm, setService]);
 
   const handleEditChange = (
@@ -364,35 +371,176 @@ export function ServicesControl() {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border rounded shadow bg-card">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="p-2 text-right">
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
+      {isMobile ? (
+        <div className="space-y-4">
+          {services.map((service) => {
+            const ServiceIcon =
+              service.icon && icons[service.icon as keyof typeof icons];
+            return (
+              <div
+                key={service.key}
+                className="rounded border bg-card p-4 flex flex-col gap-2 shadow"
+              >
+                <div className="flex items-center gap-2">
+                  {ServiceIcon && <ServiceIcon size={24} />}
+                  <span className="font-bold text-lg">{service.title}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {service.key}
+                  </span>
+                </div>
+                <div
+                  className="text-sm text-muted-foreground truncate"
+                  title={service.description}
+                >
+                  {service.description}
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs">סדר: {service.order}</span>
+                  <Switch
+                    checked={service.visible ?? false}
+                    disabled
+                    className="ml-auto"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => startEdit(service)}
+                  >
+                    ערוך
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full border rounded shadow bg-card">
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th key={header.id} className="p-2 text-right">
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="border-b last:border-b-0">
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="p-2 text-center">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {/* Edit dialog for both mobile and desktop */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>עריכת שירות</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void saveEdit();
+            }}
+            className="space-y-4"
+          >
+            <Input
+              name="title"
+              value={editForm?.title || ""}
+              onChange={handleEditChange}
+              placeholder="כותרת"
+              required
+            />
+            <Textarea
+              name="description"
+              value={editForm?.description || ""}
+              onChange={handleEditChange}
+              placeholder="תיאור"
+              required
+              className="min-w-[180px]"
+            />
+            <div>
+              <span className="block text-xs mb-1">אייקון</span>
+              <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex items-center gap-2 min-w-[90px]"
+                  >
+                    {editForm?.icon &&
+                    icons[editForm.icon as keyof typeof icons]
+                      ? React.createElement(
+                          icons[editForm.icon as keyof typeof icons],
+                          { size: 18, className: "mr-1" },
+                        )
+                      : null}
+                    {editForm?.icon ? (
+                      <span className="capitalize">{editForm.icon}</span>
+                    ) : (
+                      <span>בחר אייקון</span>
                     )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b last:border-b-0">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="p-2 text-center">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="p-2">
+                  <IconPicker
+                    selectedIcon={editForm?.icon || ""}
+                    setSelectedIcon={(icon) => {
+                      setEditForm((f) => ({ ...f!, icon }));
+                      setIconPickerOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <Input
+              name="order"
+              type="number"
+              value={editForm?.order ?? 0}
+              onChange={handleEditChange}
+              placeholder="סדר"
+            />
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={!!editForm?.visible}
+                onCheckedChange={(checked) =>
+                  setEditForm((f) => ({ ...f!, visible: checked }))
+                }
+                id="edit-visible-switch"
+              />
+              <label htmlFor="edit-visible-switch" className="text-sm">
+                גלוי
+              </label>
+            </div>
+            <DialogFooter>
+              <Button type="submit" variant="default">
+                שמור
+              </Button>
+              <DialogClose asChild>
+                <Button type="button" variant="secondary" onClick={cancelEdit}>
+                  ביטול
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

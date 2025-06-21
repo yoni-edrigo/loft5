@@ -328,47 +328,47 @@ export default function OfficeImagesTable({
     });
   };
 
-  if (isMobile) {
-    return (
-      <div>
-        {images.map((img) => (
-          <OfficeImageRow
-            key={img._id}
-            image={img}
-            saveRow={saveRow}
-            setDeleteId={setDeleteId}
-            isMobile={true}
-          />
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <thead>
-          <tr>
-            <TableHead>תמונה</TableHead>
-            <TableHead>Alt</TableHead>
-            <TableHead>גלוי</TableHead>
-            <TableHead>בהדר</TableHead>
-            <TableHead>בגלריה</TableHead>
-            <TableHead>פעולות</TableHead>
-          </tr>
-        </thead>
-        <TableBody>
-          {images.map((img) => (
-            <OfficeImageRow
-              key={img._id}
-              image={img}
-              saveRow={saveRow}
-              setDeleteId={setDeleteId}
-              isMobile={false}
-            />
-          ))}
-        </TableBody>
-      </Table>
+    <div className="mx-auto max-w-lg mb-4">
+      <div className="bg-background overflow-hidden rounded-md border">
+        {isMobile ? (
+          <div className="flex flex-col gap-4">
+            {images.map((image) => (
+              <OfficeImageRow
+                key={image._id}
+                image={image}
+                saveRow={updateOfficeImage}
+                setDeleteId={setDeleteId}
+                isMobile={true}
+              />
+            ))}
+          </div>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <TableHead>תמונה</TableHead>
+                <TableHead>Alt</TableHead>
+                <TableHead>גלוי</TableHead>
+                <TableHead>בהדר</TableHead>
+                <TableHead>בגלריה</TableHead>
+                <TableHead>פעולות</TableHead>
+              </tr>
+            </thead>
+            <TableBody>
+              {images.map((img) => (
+                <OfficeImageRow
+                  key={img._id}
+                  image={img}
+                  saveRow={saveRow}
+                  setDeleteId={setDeleteId}
+                  isMobile={false}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
     </div>
   );
 }

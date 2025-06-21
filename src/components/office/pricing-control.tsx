@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function PricingControl() {
   const pricingData = useQuery(api.get_functions.getPricing);
@@ -59,6 +60,8 @@ export function PricingControl() {
     { name: "photographerPrice", label: "מחיר צלם" },
   ];
 
+  const isMobile = useIsMobile();
+
   return (
     <Card>
       <CardHeader>
@@ -68,29 +71,51 @@ export function PricingControl() {
         <form onSubmit={() => void handleSubmit}>
           <div className="mx-auto max-w-lg">
             <div className="bg-background overflow-hidden rounded-md border">
-              <Table>
-                <TableBody>
+              {isMobile ? (
+                <div className="flex flex-col gap-4">
                   {pricingFields.map((field) => (
-                    <TableRow
+                    <div
                       key={field.name}
-                      className="*:border-border hover:bg-transparent [&>:not(:last-child)]:border-r"
+                      className="flex flex-col gap-1 p-2 border-b last:border-b-0"
                     >
-                      <TableCell className="bg-muted/50 py-2 font-medium">
+                      <label className="font-medium text-sm mb-1">
                         {field.label}
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <Input
-                          name={field.name}
-                          value={pricing[field.name as keyof typeof pricing]}
-                          onChange={handleInputChange}
-                          type="number"
-                          className="w-full"
-                        />
-                      </TableCell>
-                    </TableRow>
+                      </label>
+                      <Input
+                        name={field.name}
+                        value={pricing[field.name as keyof typeof pricing]}
+                        onChange={handleInputChange}
+                        type="number"
+                        className="w-full"
+                      />
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                <Table>
+                  <TableBody>
+                    {pricingFields.map((field) => (
+                      <TableRow
+                        key={field.name}
+                        className="*:border-border hover:bg-transparent [&>:not(:last-child)]:border-r"
+                      >
+                        <TableCell className="bg-muted/50 py-2 font-medium">
+                          {field.label}
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <Input
+                            name={field.name}
+                            value={pricing[field.name as keyof typeof pricing]}
+                            onChange={handleInputChange}
+                            type="number"
+                            className="w-full"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </div>
             <div className="mt-4 flex justify-center">
               <Button type="submit">עדכן מחירים</Button>

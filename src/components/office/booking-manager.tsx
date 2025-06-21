@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BookingManagerProps {
   selectedTab: string;
@@ -94,6 +95,8 @@ export function BookingManager({
 
   const hasFilters = nameFilter || selectedDate || paymentFilter !== "all";
 
+  const isMobile = useIsMobile();
+
   return (
     <Card>
       <CardHeader>
@@ -157,7 +160,6 @@ export function BookingManager({
           </div>
         </div>
       </CardHeader>
-
       <CardContent>
         <Tabs value={selectedTab} onValueChange={setSelectedTab} dir="rtl">
           <ScrollArea>
@@ -190,89 +192,167 @@ export function BookingManager({
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>תאריך אירוע</TableHead>
-                  <TableHead>שם לקוח</TableHead>
-                  <TableHead>זמן</TableHead>
-                  <TableHead>משתתפים</TableHead>
-                  <TableHead>סה"כ</TableHead>
-                  <TableHead>סטטוס</TableHead>
-                  <TableHead>סטטוס תשלום</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredBookings.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center h-32 text-muted-foreground"
+          {isMobile ? (
+            <div className="flex flex-col gap-4">
+              {filteredBookings.length === 0 ? (
+                <div className="text-center h-32 text-muted-foreground">
+                  לא נמצאו הזמנות
+                </div>
+              ) : (
+                filteredBookings.map((booking) => {
+                  const isAfternoon = booking.timeSlot === "afternoon";
+                  const isApproved = !!booking.approvedAt;
+                  const isDeclined = !!booking.declinedAt;
+                  return (
+                    <div
+                      key={booking._id}
+                      className="rounded border bg-card p-4 flex flex-col gap-2 shadow cursor-pointer"
+                      onClick={() => setSelectedBookingId(booking._id)}
                     >
-                      לא נמצאו הזמנות
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredBookings.map((booking) => {
-                    const isAfternoon = booking.timeSlot === "afternoon";
-                    const isApproved = !!booking.approvedAt;
-                    const isDeclined = !!booking.declinedAt;
-
-                    return (
-                      <TableRow
-                        key={booking._id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => setSelectedBookingId(booking._id)}
-                      >
-                        <TableCell>
+                      <div className="flex flex-col items-end gap-1 w-full">
+                        <span className="font-bold text-lg leading-tight truncate w-full text-right">
+                          {booking.customerName}
+                        </span>
+                        <span className="text-xs text-muted-foreground w-full text-right">
                           {format(new Date(booking.eventDate), "dd/MM/yyyy", {
                             locale: he,
                           })}
-                        </TableCell>
-                        <TableCell>{booking.customerName}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {isAfternoon ? "צהריים" : "ערב"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{booking.numberOfParticipants}</TableCell>
-                        <TableCell>
-                          ₪{formatPrice(booking.totalPrice)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              isApproved
-                                ? "default"
-                                : isDeclined
-                                  ? "destructive"
-                                  : "secondary"
-                            }
-                          >
-                            {isApproved
-                              ? "מאושרת"
+                        </span>
+                      </div>
+                      <div className="flex flex-row justify-between items-center gap-2 text-xs w-full">
+                        <span className="truncate">
+                          משתתפים: {booking.numberOfParticipants}
+                        </span>
+                        <span className="truncate">
+                          סכום: ₪{formatPrice(booking.totalPrice)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs w-full mt-1">
+                        <Badge
+                          variant="outline"
+                          className="truncate max-w-[80px] px-2 py-1"
+                        >
+                          {isAfternoon ? "צהריים" : "ערב"}
+                        </Badge>
+                        <Badge
+                          variant={
+                            isApproved
+                              ? "default"
                               : isDeclined
-                                ? "נדחתה"
-                                : "ממתינה לאישור"}
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="truncate max-w-[90px] px-2 py-1"
+                        >
+                          {isApproved
+                            ? "מאושרת"
+                            : isDeclined
+                              ? "נדחתה"
+                              : "ממתינה לאישור"}
+                        </Badge>
+                        {booking.paidAt ? (
+                          <Badge className="bg-status-available text-white truncate max-w-[80px] px-2 py-1">
+                            שולם
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {booking.paidAt ? (
-                            <Badge className="bg-status-available text-white">
-                              שולם
+                        ) : (
+                          <Badge
+                            variant="destructive"
+                            className="truncate max-w-[80px] px-2 py-1"
+                          >
+                            לא שולם
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>תאריך אירוע</TableHead>
+                    <TableHead>שם לקוח</TableHead>
+                    <TableHead>זמן</TableHead>
+                    <TableHead>משתתפים</TableHead>
+                    <TableHead>סה"כ</TableHead>
+                    <TableHead>סטטוס</TableHead>
+                    <TableHead>סטטוס תשלום</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredBookings.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center h-32 text-muted-foreground"
+                      >
+                        לא נמצאו הזמנות
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredBookings.map((booking) => {
+                      const isAfternoon = booking.timeSlot === "afternoon";
+                      const isApproved = !!booking.approvedAt;
+                      const isDeclined = !!booking.declinedAt;
+
+                      return (
+                        <TableRow
+                          key={booking._id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => setSelectedBookingId(booking._id)}
+                        >
+                          <TableCell>
+                            {format(new Date(booking.eventDate), "dd/MM/yyyy", {
+                              locale: he,
+                            })}
+                          </TableCell>
+                          <TableCell>{booking.customerName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {isAfternoon ? "צהריים" : "ערב"}
                             </Badge>
-                          ) : (
-                            <Badge variant="destructive">לא שולם</Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                          </TableCell>
+                          <TableCell>{booking.numberOfParticipants}</TableCell>
+                          <TableCell>
+                            ₪{formatPrice(booking.totalPrice)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                isApproved
+                                  ? "default"
+                                  : isDeclined
+                                    ? "destructive"
+                                    : "secondary"
+                              }
+                            >
+                              {isApproved
+                                ? "מאושרת"
+                                : isDeclined
+                                  ? "נדחתה"
+                                  : "ממתינה לאישור"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {booking.paidAt ? (
+                              <Badge className="bg-status-available text-white">
+                                שולם
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive">לא שולם</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </Tabs>
       </CardContent>
 

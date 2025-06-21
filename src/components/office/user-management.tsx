@@ -12,6 +12,7 @@ import {
   createColumnHelper,
   ColumnDef,
 } from "@tanstack/react-table";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function UserManagement() {
   const users = useQuery(api.user_roles.getAllUsers);
@@ -22,6 +23,7 @@ export function UserManagement() {
     {},
   );
   const [localLoading, setLocalLoading] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const handleStartEdit = (userId: string, roles: string[] | undefined) => {
     setPendingRoles((prev) => ({
@@ -218,41 +220,142 @@ export function UserManagement() {
       <h2 className="text-2xl font-bold mb-6 text-center border-b pb-4">
         ניהול משתמשים
       </h2>
-      <div className="overflow-x-auto rounded-lg shadow border bg-white dark:bg-zinc-900">
-        <table className="min-w-full text-right border-separate border-spacing-0">
-          <thead className="bg-zinc-100 dark:bg-zinc-800">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-4 py-3 font-semibold text-zinc-700 dark:text-zinc-200 border-b"
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                  </th>
+      {isMobile ? (
+        <div className="flex flex-col gap-4">
+          {users.map((user) => (
+            <div
+              key={user._id}
+              className="rounded border bg-white dark:bg-zinc-900 p-4 flex flex-col gap-2 shadow"
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-lg">
+                  {user.name || user.email || user._id}
+                </span>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {user.email}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2 flex-wrap">
+                {(
+                  user.roles?.filter((r) =>
+                    ["MANAGER", "DESIGNER", "GUEST"].includes(r),
+                  ) ?? []
+                ).map((r) => (
+                  <span key={r} className="truncate max-w-[60px] block">
+                    <span className="inline-block px-2 py-1 rounded text-xs font-semibold border w-full truncate max-w-[60px]">
+                      {ROLE_LABELS[r]}
+                    </span>
+                  </span>
                 ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="align-middle">
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="border px-4 py-2 whitespace-nowrap text-sm"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                {user.roles?.includes("ADMIN") && (
+                  <span className="inline-block px-2 py-1 rounded text-xs font-semibold border bg-yellow-100 text-yellow-800 border-yellow-300 w-full truncate max-w-[60px]">
+                    {ROLE_LABELS.ADMIN}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2 mt-2">
+                {user.roles?.includes("ADMIN") ? null : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleStartEdit(user._id, user.roles)}
+                      disabled={localLoading === user._id}
+                    >
+                      <Pencil className="w-4 h-4 text-blue-500" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        void handleDelete(user._id);
+                      }}
+                      disabled={localLoading === user._id}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </>
+                )}
+              </div>
+              {editRow === user._id && (
+                <div className="mt-2 flex flex-col gap-2">
+                  <MultipleSelector
+                    value={pendingRoles[user._id] || []}
+                    options={[
+                      { label: ROLE_LABELS.MANAGER, value: "MANAGER" },
+                      { label: ROLE_LABELS.DESIGNER, value: "DESIGNER" },
+                      { label: ROLE_LABELS.GUEST, value: "GUEST" },
+                    ]}
+                    disabled={localLoading === user._id}
+                    onChange={(opts) =>
+                      setPendingRoles((prev) => ({ ...prev, [user._id]: opts }))
+                    }
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        void handleSaveEdit(user._id);
+                      }}
+                      disabled={localLoading === user._id}
+                    >
+                      <Save className="w-4 h-4 text-green-600" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleCancelEdit}
+                      disabled={localLoading === user._id}
+                    >
+                      <X className="w-4 h-4 text-gray-500" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg shadow border bg-white dark:bg-zinc-900">
+          <table className="min-w-full text-right border-separate border-spacing-0">
+            <thead className="bg-zinc-100 dark:bg-zinc-800">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="px-4 py-3 font-semibold text-zinc-700 dark:text-zinc-200 border-b"
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="align-middle">
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className="border px-4 py-2 whitespace-nowrap text-sm"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
