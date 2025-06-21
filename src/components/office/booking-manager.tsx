@@ -1,4 +1,4 @@
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,15 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  motion,
+  useAnimation,
+  useMotionValue,
+  useTransform,
+} from "motion/react";
+import { BookingDoc } from "@/lib/types";
+import { Check } from "lucide-react";
+import { toast } from "sonner";
 
 interface BookingManagerProps {
   selectedTab: string;
@@ -37,6 +46,144 @@ interface BookingManagerProps {
   selectedBookingId?: string | null;
   setSelectedBookingId: (id: string | null) => void;
 }
+
+// --- SwipeableBookingCard Component ---
+interface SwipeableBookingCardProps {
+  booking: BookingDoc;
+  onSelect: (id: string) => void;
+}
+
+const SwipeableBookingCard = ({
+  booking,
+  onSelect,
+}: SwipeableBookingCardProps) => {
+  const x = useMotionValue(0);
+  const controls = useAnimation();
+  const approveBooking = useMutation(api.set_functions.approveBooking);
+  const declineBooking = useMutation(api.set_functions.declineBooking);
+
+  const handleSwipe = (offsetX: number) => {
+    if (booking.approvedAt || booking.declinedAt) {
+      void controls.start({ x: 0 });
+      return;
+    }
+
+    if (offsetX > 100) {
+      // Swipe right (Approve)
+      void controls.start({ x: "100%", opacity: 0 });
+      approveBooking({ id: booking._id })
+        .then(() => {
+          toast.success("ההזמנה אושרה");
+        })
+        .catch(() => {
+          toast.error("שגיאה באישור ההזמנה");
+          void controls.start({ x: 0, opacity: 1 });
+        });
+    } else if (offsetX < -100) {
+      // Swipe left (Decline)
+      void controls.start({ x: "-100%", opacity: 0 });
+      declineBooking({ id: booking._id })
+        .then(() => {
+          toast.success("ההזמנה נדחתה");
+        })
+        .catch(() => {
+          toast.error("שגיאה בדחיית ההזמנה");
+          void controls.start({ x: 0, opacity: 1 });
+        });
+    } else {
+      void controls.start({ x: 0 });
+    }
+  };
+
+  const background = useTransform(
+    x,
+    [-100, 0, 100],
+    [
+      "rgba(239, 68, 68, 0.7)",
+      "rgba(255, 255, 255, 0)",
+      "rgba(34, 197, 94, 0.7)",
+    ],
+  );
+
+  const isAfternoon = booking.timeSlot === "afternoon";
+  const isApproved = !!booking.approvedAt;
+  const isDeclined = !!booking.declinedAt;
+  const isPending = !isApproved && !isDeclined;
+
+  return (
+    <div className="relative">
+      {isPending && (
+        <motion.div
+          style={{ background }}
+          className="absolute inset-0 rounded-lg flex items-center justify-between px-4"
+        >
+          <div className="flex items-center gap-2 text-white font-bold">
+            <X size={20} />
+            <span>דחייה</span>
+          </div>
+          <div className="flex items-center gap-2 text-white font-bold">
+            <span>אישור</span>
+            <Check size={20} />
+          </div>
+        </motion.div>
+      )}
+
+      <motion.div
+        drag={isPending ? "x" : false}
+        dragConstraints={{ left: 0, right: 0 }}
+        style={{ x }}
+        onDragEnd={(_, info) => handleSwipe(info.offset.x)}
+        animate={controls}
+        className="relative z-10 rounded border bg-card p-4 flex flex-col gap-2 shadow cursor-pointer"
+        onClick={() => onSelect(booking._id)}
+      >
+        <div className="flex flex-col items-end gap-1 w-full">
+          <span className="font-bold text-lg leading-tight truncate w-full text-right">
+            {booking.customerName}
+          </span>
+          <span className="text-xs text-muted-foreground w-full text-right">
+            {format(new Date(booking.eventDate), "dd/MM/yyyy", {
+              locale: he,
+            })}
+          </span>
+        </div>
+        <div className="flex flex-row justify-between items-center gap-2 text-xs w-full">
+          <span className="truncate">
+            משתתפים: {booking.numberOfParticipants}
+          </span>
+          <span className="truncate">
+            סכום: ₪{formatPrice(booking.totalPrice)}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs w-full mt-1">
+          <Badge variant="outline" className="truncate max-w-[80px] px-2 py-1">
+            {isAfternoon ? "צהריים" : "ערב"}
+          </Badge>
+          <Badge
+            variant={
+              isApproved ? "default" : isDeclined ? "destructive" : "secondary"
+            }
+            className="truncate max-w-[90px] px-2 py-1"
+          >
+            {isApproved ? "מאושרת" : isDeclined ? "נדחתה" : "ממתינה לאישור"}
+          </Badge>
+          {booking.paidAt ? (
+            <Badge className="bg-status-available text-white truncate max-w-[80px] px-2 py-1">
+              שולם
+            </Badge>
+          ) : (
+            <Badge
+              variant="destructive"
+              className="truncate max-w-[80px] px-2 py-1"
+            >
+              לא שולם
+            </Badge>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 export function BookingManager({
   selectedTab,
@@ -199,73 +346,13 @@ export function BookingManager({
                   לא נמצאו הזמנות
                 </div>
               ) : (
-                filteredBookings.map((booking) => {
-                  const isAfternoon = booking.timeSlot === "afternoon";
-                  const isApproved = !!booking.approvedAt;
-                  const isDeclined = !!booking.declinedAt;
-                  return (
-                    <div
-                      key={booking._id}
-                      className="rounded border bg-card p-4 flex flex-col gap-2 shadow cursor-pointer"
-                      onClick={() => setSelectedBookingId(booking._id)}
-                    >
-                      <div className="flex flex-col items-end gap-1 w-full">
-                        <span className="font-bold text-lg leading-tight truncate w-full text-right">
-                          {booking.customerName}
-                        </span>
-                        <span className="text-xs text-muted-foreground w-full text-right">
-                          {format(new Date(booking.eventDate), "dd/MM/yyyy", {
-                            locale: he,
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex flex-row justify-between items-center gap-2 text-xs w-full">
-                        <span className="truncate">
-                          משתתפים: {booking.numberOfParticipants}
-                        </span>
-                        <span className="truncate">
-                          סכום: ₪{formatPrice(booking.totalPrice)}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs w-full mt-1">
-                        <Badge
-                          variant="outline"
-                          className="truncate max-w-[80px] px-2 py-1"
-                        >
-                          {isAfternoon ? "צהריים" : "ערב"}
-                        </Badge>
-                        <Badge
-                          variant={
-                            isApproved
-                              ? "default"
-                              : isDeclined
-                                ? "destructive"
-                                : "secondary"
-                          }
-                          className="truncate max-w-[90px] px-2 py-1"
-                        >
-                          {isApproved
-                            ? "מאושרת"
-                            : isDeclined
-                              ? "נדחתה"
-                              : "ממתינה לאישור"}
-                        </Badge>
-                        {booking.paidAt ? (
-                          <Badge className="bg-status-available text-white truncate max-w-[80px] px-2 py-1">
-                            שולם
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="destructive"
-                            className="truncate max-w-[80px] px-2 py-1"
-                          >
-                            לא שולם
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+                filteredBookings.map((booking) => (
+                  <SwipeableBookingCard
+                    key={booking._id}
+                    booking={booking}
+                    onSelect={setSelectedBookingId}
+                  />
+                ))
               )}
             </div>
           ) : (
