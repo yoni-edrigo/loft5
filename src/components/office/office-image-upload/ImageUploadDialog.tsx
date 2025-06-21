@@ -37,7 +37,7 @@ export default function ImageUploadDialog({
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const imageInput = useRef<HTMLInputElement | null>(null);
-  const maxSizeMB = 2;
+  const maxSizeMB = 10;
   const maxSize = maxSizeMB * 1024 * 1024;
 
   async function handleAddImage(e: FormEvent) {
