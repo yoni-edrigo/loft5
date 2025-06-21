@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ImageGallery from "../image-gallery";
+import { useInView } from "motion/react";
 
 // Mock motion/react
 vi.mock("motion/react", () => ({
@@ -134,12 +135,13 @@ describe("ImageGallery Component", () => {
   });
   it("lazy loads images with intersection observer", () => {
     // Mock to return not in view initially
-    vi.mocked(require("react-intersection-observer").useInView).mockReturnValue(
-      {
-        ref: vi.fn(),
-        inView: false,
-      },
-    );
+    const mockRef = vi.fn();
+    const mockInView = false;
+    const mockReturnValue: any = [mockRef, mockInView, undefined];
+    mockReturnValue.ref = mockRef;
+    mockReturnValue.inView = mockInView;
+
+    vi.mocked(useInView).mockReturnValue(mockReturnValue);
 
     render(<ImageGallery />);
 

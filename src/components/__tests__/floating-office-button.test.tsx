@@ -6,12 +6,12 @@ import FloatingOfficeButton from "../floating-office-button";
 // Mock motion/react
 vi.mock("motion/react", () => ({
   motion: {
-    div: ({ children, onHoverStart, onHoverEnd, whileTap, ...props }: any) => (
+    div: ({ children, onHoverStart, onHoverEnd, _whileTap, ...props }: any) => (
       <div {...props} onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
         {children}
       </div>
     ),
-    button: ({ children, whileHover, whileTap, ...props }: any) => (
+    button: ({ children, _whileHover, _whileTap, ...props }: any) => (
       <button {...props}>{children}</button>
     ),
   },

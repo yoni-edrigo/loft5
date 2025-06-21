@@ -8,17 +8,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+interface TimeSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+}
+
 interface TimeSlotSelectorProps {
   date: Date | null;
   availableSlots: string[];
-  onTimeSlotSelect: (timeSlot: any) => void;
+  onTimeSlotSelect: (timeSlot: TimeSlot) => void;
   onAvailableSlotSelect: (slotRange: string) => void;
-  selectedTimeSlot: any | null;
+  selectedTimeSlot: TimeSlot | null;
   customStartTime: string;
   customEndTime: string;
   onCustomStartTimeChange: (value: string) => void;
   onCustomEndTimeChange: (value: string) => void;
-  timeSlots: any[];
+  timeSlots: TimeSlot[];
   className?: string;
 }
 
