@@ -179,6 +179,15 @@ const SwipeableBookingCard = ({
               לא שולם
             </Badge>
           )}
+          <Badge
+            variant="secondary"
+            className="truncate max-w-[80px] px-2 py-1"
+          >
+            {booking.startTime}
+          </Badge>
+          <Badge variant="outline" className="truncate max-w-[80px] px-2 py-1">
+            {booking.extraHours ?? 0} שעות נוספות
+          </Badge>
         </div>
       </motion.div>
     </div>
@@ -362,7 +371,8 @@ export function BookingManager({
                   <TableRow>
                     <TableHead>תאריך אירוע</TableHead>
                     <TableHead>שם לקוח</TableHead>
-                    <TableHead>זמן</TableHead>
+                    <TableHead>שעת התחלה</TableHead>
+                    <TableHead>שעות נוספות</TableHead>
                     <TableHead>משתתפים</TableHead>
                     <TableHead>סה"כ</TableHead>
                     <TableHead>סטטוס</TableHead>
@@ -397,9 +407,10 @@ export function BookingManager({
                             })}
                           </TableCell>
                           <TableCell>{booking.customerName}</TableCell>
+                          <TableCell>{booking.startTime}</TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {isAfternoon ? "צהריים" : "ערב"}
+                              {booking.extraHours ?? 0}
                             </Badge>
                           </TableCell>
                           <TableCell>{booking.numberOfParticipants}</TableCell>

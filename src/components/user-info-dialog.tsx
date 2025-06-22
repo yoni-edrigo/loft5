@@ -86,6 +86,7 @@ export function UserInfoDialog({ open, onOpenChange }: UserInfoDialogProps) {
         customerPhone: values.customerPhone,
         eventDate: bookingData.selectedDate,
         timeSlot: bookingData.selectedTimeSlot,
+        startTime: bookingData.selectedStartTime,
         numberOfParticipants: bookingData.numberOfParticipants,
         extraHours: bookingData.extraHours || 0,
         includesKaraoke: false,

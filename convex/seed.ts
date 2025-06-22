@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { api } from "./_generated/api";
 
 export const seedDatabase = mutation({
   args: {},
@@ -281,6 +282,7 @@ export const seedDatabase = mutation({
         customerPhone: "050-1234567",
         eventDate: "2025-06-15",
         timeSlot: "evening" as const,
+        startTime: "20:00",
         numberOfParticipants: 35,
         extraHours: 1,
         includesKaraoke: false,
@@ -296,6 +298,7 @@ export const seedDatabase = mutation({
         customerPhone: "052-9876543",
         eventDate: "2025-06-20",
         timeSlot: "afternoon" as const,
+        startTime: "12:30",
         numberOfParticipants: 20,
         extraHours: 0,
         includesKaraoke: true,
@@ -311,6 +314,7 @@ export const seedDatabase = mutation({
         customerPhone: "054-5555555",
         eventDate: "2025-06-25",
         timeSlot: "evening" as const,
+        startTime: "19:00",
         numberOfParticipants: 15,
         extraHours: 0,
         includesKaraoke: false,
@@ -326,6 +330,7 @@ export const seedDatabase = mutation({
         customerPhone: "053-7777777",
         eventDate: "2025-07-10",
         timeSlot: "afternoon" as const,
+        startTime: "14:00",
         numberOfParticipants: 12,
         extraHours: 0,
         includesKaraoke: false,
@@ -335,29 +340,54 @@ export const seedDatabase = mutation({
         createdAt: Date.now(),
         // This booking is not yet approved
       },
-    ]; // Insert bookings and update availability slots
-    for (const booking of sampleBookings) {
-      const bookingId = await ctx.db.insert("bookings", booking);
-      const availabilityId = availabilityMap.get(booking.eventDate);
+    ];
 
-      // Only link to availability if the booking is approved
-      if (availabilityId && booking.approvedAt) {
-        const availability = await ctx.db.get(availabilityId);
-        if (availability) {
-          // Update the corresponding time slot with the booking ID
-          const updatedTimeSlots = availability.timeSlots.map(
-            (slot: {
-              slot: "afternoon" | "evening";
-              bookingId?: Id<"bookings">;
-            }) =>
-              slot.slot === booking.timeSlot ? { ...slot, bookingId } : slot,
-          );
-
-          await ctx.db.patch(availabilityId, {
-            timeSlots: updatedTimeSlots,
-          });
-        }
+    // Ensure availability exists for all sample booking dates
+    const sampleBookingDates = new Set(sampleBookings.map((b) => b.eventDate));
+    for (const dateString of sampleBookingDates) {
+      if (!availabilityMap.has(dateString)) {
+        const availabilityId = await ctx.db.insert("availability", {
+          date: dateString,
+          timeSlots: [
+            { slot: "afternoon" as const },
+            { slot: "evening" as const },
+          ],
+        });
+        availabilityMap.set(dateString, availabilityId);
+        console.log(`Created missing availability for ${dateString}`);
       }
+    }
+
+    // Insert bookings and collect IDs for approval
+    const bookingsToApprove: Id<"bookings">[] = [];
+    for (const booking of sampleBookings) {
+      // Remove approvedAt from booking before insert
+      const { approvedAt, ...bookingData } = booking;
+      const bookingId = await ctx.db.insert("bookings", bookingData);
+      // If this booking was meant to be approved, add to approval list
+      if (approvedAt) {
+        bookingsToApprove.push(bookingId);
+      }
+    }
+
+    // Approve bookings directly (no auth required)
+    for (const bookingId of bookingsToApprove) {
+      // Set approvedAt on the booking
+      await ctx.db.patch(bookingId, { approvedAt: Date.now() });
+      // Fetch the booking to get eventDate and timeSlot
+      const booking = await ctx.db.get(bookingId);
+      if (!booking) continue;
+      // Find the corresponding availability record
+      const availability = await ctx.db
+        .query("availability")
+        .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
+        .first();
+      if (!availability) continue;
+      // Update the correct slot with the bookingId
+      const updatedTimeSlots = availability.timeSlots.map((slot) =>
+        slot.slot === booking.timeSlot ? { ...slot, bookingId } : slot,
+      );
+      await ctx.db.patch(availability._id, { timeSlots: updatedTimeSlots });
     }
 
     console.log("Database seeded successfully!");

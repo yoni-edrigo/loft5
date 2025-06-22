@@ -199,6 +199,11 @@ export function BookingDetailsDialog({
               </div>
 
               <div className="flex justify-between items-center">
+                <span>שעת התחלה:</span>
+                <span className="font-medium">{booking.startTime}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
                 <span>זמן:</span>
                 <Badge variant="secondary">
                   {isAfternoon ? "צהריים (12:00-16:00)" : "ערב (18:00-22:00)"}
@@ -212,12 +217,10 @@ export function BookingDetailsDialog({
                 </span>
               </div>
 
-              {booking.extraHours ? (
-                <div className="flex justify-between items-center">
-                  <span>שעות נוספות:</span>
-                  <span className="font-medium">{booking.extraHours}</span>
-                </div>
-              ) : null}
+              <div className="flex justify-between items-center">
+                <span>שעות נוספות:</span>
+                <span className="font-medium">{booking.extraHours ?? 0}</span>
+              </div>
             </div>
           </div>
 

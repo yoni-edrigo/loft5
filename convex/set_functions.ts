@@ -121,6 +121,7 @@ export const createBooking = mutation({
     customerPhone: v.string(),
     eventDate: v.string(),
     timeSlot: v.union(v.literal("afternoon"), v.literal("evening")),
+    startTime: v.string(),
     numberOfParticipants: v.number(),
     extraHours: v.optional(v.number()),
     includesKaraoke: v.boolean(),
@@ -192,6 +193,7 @@ export const createBooking = mutation({
       customerPhone: args.customerPhone,
       eventDate: args.eventDate,
       timeSlot: args.timeSlot,
+      startTime: args.startTime,
       numberOfParticipants: args.numberOfParticipants,
       extraHours: args.extraHours,
       includesKaraoke,
@@ -207,6 +209,7 @@ export const createBooking = mutation({
     // Add the missing includesPhotographer field
     const bookingDataWithPhotographer = {
       ...bookingData,
+      startTime: args.startTime,
       includesPhotographer: false, // Default to false, can be updated later
     };
 
@@ -465,6 +468,138 @@ export const declineBooking = mutation({
 
     // No need to free up time slot since it was never blocked for pending bookings
     // The time slot is only blocked when booking is approved
+
+    return { success: true };
+  },
+});
+
+// Mark a booking as paid (manager or admin)
+export const markAsPaid = mutation({
+  args: {
+    id: v.id("bookings"),
+    paymentMethod: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
+    const booking = await ctx.db.get(args.id);
+    if (!booking) throw new Error("Booking not found");
+
+    await ctx.db.patch(args.id, {
+      paidAt: Date.now(),
+      paymentMethod: args.paymentMethod,
+    });
+
+    return { success: true };
+  },
+});
+
+// Delete a booking (manager or admin)
+export const deleteBooking = mutation({
+  args: { id: v.id("bookings") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: ADMIN role required");
+    }
+    const booking = await ctx.db.get(args.id);
+    if (!booking) throw new Error("Booking not found");
+
+    // Free up time slot if it was an approved booking
+    if (booking.approvedAt) {
+      const availability = await ctx.db
+        .query("availability")
+        .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
+        .first();
+
+      if (availability) {
+        await ctx.db.patch(availability._id, {
+          timeSlots: availability.timeSlots.map((slot) =>
+            slot.slot === booking.timeSlot ? { slot: slot.slot } : slot,
+          ),
+        });
+      }
+    }
+
+    await ctx.db.delete(args.id);
+    return { success: true };
+  },
+});
+
+// Update booking details (manager or admin)
+export const updateBooking = mutation({
+  args: {
+    id: v.id("bookings"),
+    updates: v.object({
+      customerName: v.optional(v.string()),
+      customerEmail: v.optional(v.string()),
+      customerPhone: v.optional(v.string()),
+      eventDate: v.optional(v.string()),
+      startTime: v.optional(v.string()),
+      timeSlot: v.optional(
+        v.union(v.literal("afternoon"), v.literal("evening")),
+      ),
+      numberOfParticipants: v.optional(v.number()),
+      extraHours: v.optional(v.number()),
+      totalPrice: v.optional(v.number()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+    const user = await ctx.db.get(userId);
+    if (!user?.roles?.includes("MANAGER") && !user?.roles?.includes("ADMIN")) {
+      throw new Error("Unauthorized: MANAGER or ADMIN role required");
+    }
+
+    const booking = await ctx.db.get(args.id);
+    if (!booking) throw new Error("Booking not found");
+
+    // If the date is changed on an approved booking, we need to move the bookingId in availability
+    if (
+      booking.approvedAt &&
+      args.updates.eventDate &&
+      args.updates.eventDate !== booking.eventDate
+    ) {
+      // 1. Remove from old availability
+      const oldAvailability = await ctx.db
+        .query("availability")
+        .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
+        .first();
+
+      if (oldAvailability) {
+        await ctx.db.patch(oldAvailability._id, {
+          timeSlots: oldAvailability.timeSlots.map((s) =>
+            s.slot === booking.timeSlot ? { slot: s.slot } : s,
+          ),
+        });
+      }
+
+      // 2. Add to new availability
+      const newAvailability = await ctx.db
+        .query("availability")
+        .withIndex("by_date", (q) => q.eq("date", args.updates.eventDate!))
+        .first();
+
+      const targetSlot = args.updates.timeSlot || booking.timeSlot;
+
+      if (newAvailability) {
+        await ctx.db.patch(newAvailability._id, {
+          timeSlots: newAvailability.timeSlots.map((s) =>
+            s.slot === targetSlot ? { ...s, bookingId: args.id } : s,
+          ),
+        });
+      }
+    }
+
+    // Update the booking itself
+    await ctx.db.patch(args.id, args.updates);
 
     return { success: true };
   },

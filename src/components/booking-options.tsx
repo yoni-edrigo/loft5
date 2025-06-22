@@ -21,6 +21,8 @@ import {
 import { formatPrice } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Id } from "../../convex/_generated/dataModel";
+import { Input } from "@/components/ui/input";
+import { Button } from "./ui/button";
 
 export default function BookingOptions() {
   const {
@@ -36,6 +38,9 @@ export default function BookingOptions() {
     addStandaloneProduct,
     removeStandaloneProduct,
     isProductSelected,
+    selectedStartTime,
+    setSelectedStartTime,
+    getAvailableStartTimes,
   } = useBookingStore();
 
   // Filter products by category and slot
@@ -98,14 +103,17 @@ export default function BookingOptions() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <Label className="text-base">מספר משתתפים</Label>
-              <motion.span
-                key={numberOfParticipants}
-                initial={{ scale: 1.2, color: "#1E3A8A" }}
-                animate={{ scale: 1, color: "inherit" }}
-                className="font-medium text-lg"
-              >
-                {numberOfParticipants}
-              </motion.span>
+              <Input
+                type="number"
+                min={1}
+                max={50}
+                value={numberOfParticipants}
+                onChange={(e) =>
+                  setNumberOfParticipants(Number(e.target.value))
+                }
+                className="w-20 px-2 py-1 rounded border border-border bg-background text-right text-lg font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                aria-label="מספר משתתפים"
+              />
             </div>
 
             <Slider
@@ -170,8 +178,31 @@ export default function BookingOptions() {
             </div>
           </div>
 
-          {/* Extra Hours (Evening only) */}
-          {isEvening && (
+          {/* Start Time Selection */}
+          <div className="space-y-3">
+            <Label className="text-base">שעת התחלה</Label>
+            <div className="w-full max-w-full overflow-x-auto">
+              <div className="flex flex-wrap sm:flex-nowrap gap-2 min-w-[220px]">
+                {getAvailableStartTimes().map((time) => (
+                  <Button
+                    key={time}
+                    type="button"
+                    className={` ${selectedStartTime === time ? "bg-primary text-primary-foreground border-primary" : "bg-background text-foreground border-border"}`}
+                    style={{ minWidth: 64 }}
+                    onClick={() => setSelectedStartTime(time)}
+                  >
+                    {time}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            {!selectedStartTime && (
+              <div className="text-sm text-red-600">יש לבחור שעת התחלה</div>
+            )}
+          </div>
+
+          {/* Extra Hours (Afternoon & Evening) */}
+          {(isAfternoon || isEvening) && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -190,18 +221,21 @@ export default function BookingOptions() {
                   </motion.span>
                 </div>
 
-                <Slider
-                  min={0}
-                  max={4}
-                  step={1}
-                  value={[extraHours]}
-                  onValueChange={(value) => setExtraHours(value[0])}
-                  className="py-4"
-                />
-
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>ללא תוספת</span>
-                  <span>עד 4 שעות נוספות</span>
+                {/* Tag group for extra hours */}
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(
+                    { length: (isAfternoon ? 2 : 4) + 1 },
+                    (_, i) => i,
+                  ).map((hour) => (
+                    <Button
+                      key={hour}
+                      type="button"
+                      className={` ${extraHours === hour ? "bg-primary text-primary-foreground border-primary" : "bg-background text-foreground border-border"}`}
+                      onClick={() => setExtraHours(hour)}
+                    >
+                      {hour === 0 ? "ללא תוספת" : `${hour} שעות`}
+                    </Button>
+                  ))}
                 </div>
 
                 {extraHours > 0 && (
@@ -237,16 +271,41 @@ export default function BookingOptions() {
                   className="flex flex-col gap-2"
                 >
                   {foodPackages.map((p) => (
-                    <Label key={p._id} className="flex items-center gap-2">
-                      <RadioGroupItem value={p._id} />
-                      <span className="font-medium">{p.nameHe}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {p.descriptionHe}
-                      </span>
-                      <span className="ml-auto text-sm font-medium">
-                        ₪{formatPrice(p.price)} לאדם
-                      </span>
-                    </Label>
+                    <div
+                      key={p._id}
+                      className={[
+                        "gap-2 p-3 border rounded-lg bg-muted/10 transition-colors duration-150",
+                        packageSelections.get("food_package")?.productId ===
+                        p._id
+                          ? "bg-blue-50 border-blue-400"
+                          : "border-border",
+                      ].join(" ")}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "auto 1fr auto",
+                      }}
+                    >
+                      {/* Radio button, accessible label */}
+                      <div className="pt-[0.2rem]">
+                        <RadioGroupItem id={`food-${p._id}`} value={p._id} />
+                      </div>
+                      {/* Name and description */}
+                      <div className="col-span-2 sm:col-span-1 row-span-2">
+                        <label
+                          htmlFor={`food-${p._id}`}
+                          className="font-medium break-words text-base line-clamp-2 block cursor-pointer"
+                        >
+                          {p.nameHe}
+                        </label>
+                        <span className="text-sm text-muted-foreground break-words line-clamp-3 block">
+                          {p.descriptionHe}
+                        </span>
+                      </div>
+                      {/* Price */}
+                      <div className="col-2 sm:col-auto row-span-2 text-sm font-medium flex sm:flex-col gap-2 sm:gap-0 items-start">
+                        <span>₪{formatPrice(p.price)}</span>
+                      </div>
+                    </div>
                   ))}
                 </RadioGroup>
               </div>
@@ -269,16 +328,41 @@ export default function BookingOptions() {
                   className="flex flex-col gap-2"
                 >
                   {drinksPackages.map((p) => (
-                    <Label key={p._id} className="flex items-center gap-2">
-                      <RadioGroupItem value={p._id} />
-                      <span className="font-medium">{p.nameHe}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {p.descriptionHe}
-                      </span>
-                      <span className="ml-auto text-sm font-medium">
-                        ₪{formatPrice(p.price)} לאדם
-                      </span>
-                    </Label>
+                    <div
+                      key={p._id}
+                      className={[
+                        "gap-2 p-3 border rounded-lg bg-muted/10 transition-colors duration-150",
+                        packageSelections.get("drinks_package")?.productId ===
+                        p._id
+                          ? "bg-blue-50 border-blue-400"
+                          : "border-border",
+                      ].join(" ")}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "auto 1fr auto",
+                      }}
+                    >
+                      {/* Radio button, accessible label */}
+                      <div className="pt-[0.2rem]">
+                        <RadioGroupItem id={`drink-${p._id}`} value={p._id} />
+                      </div>
+                      {/* Name and description */}
+                      <div className="col-span-2 sm:col-span-1 row-span-2">
+                        <label
+                          htmlFor={`drink-${p._id}`}
+                          className="font-medium break-words text-base line-clamp-2 block cursor-pointer"
+                        >
+                          {p.nameHe}
+                        </label>
+                        <span className="text-sm text-muted-foreground break-words line-clamp-3 block">
+                          {p.descriptionHe}
+                        </span>
+                      </div>
+                      {/* Price */}
+                      <div className="col-2 sm:col-auto row-span-2 text-sm font-medium flex sm:flex-col gap-2 sm:gap-0 items-start">
+                        <span>₪{formatPrice(p.price)}</span>
+                      </div>
+                    </div>
                   ))}
                 </RadioGroup>
               </div>
@@ -288,12 +372,17 @@ export default function BookingOptions() {
             {snacks.map((p) => (
               <div
                 key={p._id}
-                className="flex items-center justify-between p-4 border rounded-lg"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-y-2"
               >
                 <div className="flex items-center gap-3">
                   <Cookie className="h-5 w-5 text-yellow-600" />
                   <div>
-                    <div className="font-medium">{p.nameHe}</div>
+                    <label
+                      className="font-medium"
+                      htmlFor={`snack-switch-${p._id}`}
+                    >
+                      {p.nameHe}
+                    </label>
                     <div className="text-sm text-muted-foreground">
                       {p.descriptionHe}
                     </div>
@@ -304,12 +393,14 @@ export default function BookingOptions() {
                     ₪{formatPrice(p.price)} לאדם
                   </span>
                   <Switch
+                    id={`snack-switch-${p._id}`}
                     checked={isProductSelected(p._id)}
                     onCheckedChange={(checked) =>
                       checked
                         ? addStandaloneProduct(p._id)
                         : removeStandaloneProduct(p._id)
                     }
+                    aria-label={`הוסף ${p.nameHe}`}
                   />
                 </div>
               </div>
@@ -319,12 +410,17 @@ export default function BookingOptions() {
             {addons.map((p) => (
               <div
                 key={p._id}
-                className="flex items-center justify-between p-4 border rounded-lg"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-y-2"
               >
                 <div className="flex items-center gap-3">
                   <Camera className="h-5 w-5 text-blue-600" />
                   <div>
-                    <div className="font-medium">{p.nameHe}</div>
+                    <label
+                      className="font-medium"
+                      htmlFor={`addon-switch-${p._id}`}
+                    >
+                      {p.nameHe}
+                    </label>
                     <div className="text-sm text-muted-foreground">
                       {p.descriptionHe}
                     </div>
@@ -335,12 +431,14 @@ export default function BookingOptions() {
                     ₪{formatPrice(p.price)}
                   </span>
                   <Switch
+                    id={`addon-switch-${p._id}`}
                     checked={isProductSelected(p._id)}
                     onCheckedChange={(checked) =>
                       checked
                         ? addStandaloneProduct(p._id)
                         : removeStandaloneProduct(p._id)
                     }
+                    aria-label={`הוסף ${p.nameHe}`}
                   />
                 </div>
               </div>

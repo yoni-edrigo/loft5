@@ -23,6 +23,7 @@ export type BookingStore = {
   selectedTimeSlot: TimeSlot | null;
   numberOfParticipants: number;
   extraHours: number;
+  selectedStartTime: string | null;
 
   // NEW: Product selections (replaces boolean flags)
   selectedProducts: SelectedProduct[];
@@ -41,6 +42,7 @@ export type BookingStore = {
   setSelectedTimeSlot: (slot: TimeSlot | null) => void;
   setNumberOfParticipants: (count: number) => void;
   setExtraHours: (hours: number) => void;
+  setSelectedStartTime: (time: string | null) => void;
 
   // NEW: Product selection actions
   selectProduct: (
@@ -64,6 +66,7 @@ export type BookingStore = {
   calculateTotalPrice: () => number;
   getAvailabilityForDate: (date: Date) => TimeSlotData[];
   isDateAvailable: (date: Date) => boolean;
+  getAvailableStartTimes: () => string[];
 
   // Reset
   resetBooking: () => void;
@@ -79,6 +82,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   selectedTimeSlot: null,
   numberOfParticipants: 10,
   extraHours: 0,
+  selectedStartTime: null,
 
   // NEW: Product selections
   selectedProducts: [],
@@ -92,10 +96,13 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   setPricing: (pricing) => set({ pricing, isPricingLoaded: true }),
   setProducts: (products) => set({ products }),
   setAvailability: (availability) => set({ currentAvailability: availability }),
-  setSelectedDate: (date) => set({ selectedDate: date }),
-  setSelectedTimeSlot: (slot) => set({ selectedTimeSlot: slot }),
+  setSelectedDate: (date) =>
+    set({ selectedDate: date, selectedStartTime: null }),
+  setSelectedTimeSlot: (slot) =>
+    set({ selectedTimeSlot: slot, selectedStartTime: null }),
   setNumberOfParticipants: (count) => set({ numberOfParticipants: count }),
   setExtraHours: (hours) => set({ extraHours: hours }),
+  setSelectedStartTime: (time) => set({ selectedStartTime: time }),
 
   // NEW: Product selection actions
   selectProduct: (packageKey, productId, quantity) => {
@@ -276,6 +283,39 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
     return slots.length > 0 && slots.some((slot) => !slot.bookingId);
   },
 
+  getAvailableStartTimes: () => {
+    const { selectedTimeSlot } = get();
+    if (!selectedTimeSlot) return [];
+    // Define allowed start times for each slot
+    if (selectedTimeSlot === "afternoon") {
+      // 12:00 to 16:00, max 2 extra hours
+      return [
+        "12:00",
+        "12:30",
+        "13:00",
+        "13:30",
+        "14:00",
+        "14:30",
+        "15:00",
+        "15:30",
+        "16:00",
+      ];
+    } else {
+      // evening: 18:00 to 22:00, max 4 extra hours
+      return [
+        "18:00",
+        "18:30",
+        "19:00",
+        "19:30",
+        "20:00",
+        "20:30",
+        "21:00",
+        "21:30",
+        "22:00",
+      ];
+    }
+  },
+
   resetBooking: () =>
     set({
       selectedDate: null,
@@ -287,5 +327,6 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       customerName: "",
       customerEmail: "",
       customerPhone: "",
+      selectedStartTime: null,
     }),
 }));

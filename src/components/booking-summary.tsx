@@ -33,6 +33,7 @@ export default function BookingSummary() {
     selectedProducts,
     packageSelections,
     calculateTotalPrice,
+    selectedStartTime,
   } = useBookingStore();
 
   if (!selectedDate || !selectedTimeSlot || !pricing) {
@@ -116,9 +117,9 @@ export default function BookingSummary() {
     totalPrice === pricing.minimumPrice && totalPrice > calculatedPrice;
 
   const handleContinue = () => {
-    if (!selectedDate || !selectedTimeSlot) {
+    if (!selectedDate || !selectedTimeSlot || !selectedStartTime) {
       toast.error("שגיאה", {
-        description: "נא לבחור תאריך ושעות לפני ההזמנה",
+        description: "נא לבחור תאריך, שעות, ושעת התחלה לפני ההזמנה",
       });
       return;
     }
@@ -131,8 +132,9 @@ export default function BookingSummary() {
 
     // Save booking data to session storage
     const bookingData = {
-      selectedDate: format(selectedDate, "yyyy-MM-dd"), // This preserves local date
+      selectedDate: format(selectedDate, "yyyy-MM-dd"),
       selectedTimeSlot,
+      selectedStartTime,
       numberOfParticipants,
       extraHours,
       selectedProducts,
@@ -152,6 +154,7 @@ export default function BookingSummary() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
+      className="sm:sticky sm:top-10"
     >
       <Card>
         <CardHeader>
@@ -181,6 +184,11 @@ export default function BookingSummary() {
                 <Badge variant="secondary">
                   {isAfternoon ? "צהריים (12:00-16:00)" : "ערב (18:00-22:00)"}
                 </Badge>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span>שעת התחלה:</span>
+                <span className="font-medium">{selectedStartTime || "-"}</span>
               </div>
 
               <div className="flex justify-between items-center">

@@ -98,6 +98,7 @@ describe("Server-Side Booking Logic", () => {
       customerPhone: "123456789",
       eventDate: "2025-12-25",
       timeSlot: "evening" as const,
+      startTime: "18:00",
       numberOfParticipants: 20,
       extraHours: 0,
       includesKaraoke: true,
@@ -142,6 +143,7 @@ describe("Server-Side Booking Logic", () => {
         t.mutation(api.set_functions.createBooking, {
           ...validBookingArgs,
           totalPrice: 100,
+          startTime: "18:00",
         }),
       ).rejects.toThrow("Price validation failed");
     });
@@ -157,6 +159,7 @@ describe("Server-Side Booking Logic", () => {
         customerPhone: "111222333",
         eventDate: "2025-12-25",
         timeSlot: "evening" as const,
+        startTime: "18:00",
         numberOfParticipants: 10,
         extraHours: 0,
         includesKaraoke: false,

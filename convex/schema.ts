@@ -35,6 +35,7 @@ export default defineSchema({
     customerPhone: v.string(),
     eventDate: v.string(),
     timeSlot: v.union(v.literal("afternoon"), v.literal("evening")),
+    startTime: v.string(), // e.g., "14:30" - For information
     numberOfParticipants: v.number(),
     extraHours: v.optional(v.number()), // For evening events
     includesKaraoke: v.boolean(),
