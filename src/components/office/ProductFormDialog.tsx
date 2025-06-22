@@ -137,7 +137,7 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 onInputChange("unit", value)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger id="unit">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -155,7 +155,7 @@ const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
               value={formData.category}
               onValueChange={(value) => onInputChange("category", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="category">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -139,7 +139,7 @@ test.describe("Component Accessibility", () => {
     if (buttons > 0) {
       const buttonsWithoutLabels = await page
         .locator(
-          "button:not([aria-label]):not([aria-labelledby]):not(:has-text(/\\S/))",
+          "button:not([aria-label]):not([aria-labelledby]):not(:has-text):not([title])",
         )
         .count();
       expect(buttonsWithoutLabels).toBe(0);

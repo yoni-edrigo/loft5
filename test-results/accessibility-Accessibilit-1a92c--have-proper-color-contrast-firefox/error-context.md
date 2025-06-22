@@ -4,11 +4,17 @@
 - link "דלג לתוכן הראשי":
   - /url: "#main-content"
 - main:
-  - heading "התחברות למשרד" [level=1]
-  - text: Log in to see the numbers
-  - textbox "Email"
-  - textbox "Password"
-  - button "Sign in"
-  - text: Don't have an account?
-  - button "Sign up instead"
+  - link "Home":
+    - /url: /
+    - img "Home"
+  - navigation "Main":
+    - list
+  - button "התנתק"
+  - heading "התחברות למערכת" [level=1]
+  - text: התחברות למערכת
+  - textbox "אימייל"
+  - textbox "סיסמה"
+  - button "התחבר"
+  - text: אין לך חשבון?
+  - button "להרשמה"
 ```

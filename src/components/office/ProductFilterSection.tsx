@@ -51,10 +51,11 @@ const ProductFilterSection: React.FC<ProductFilterSectionProps> = ({
     <CardContent className="space-y-4">
       {/* Search */}
       <div className="space-y-2">
-        <Label>חיפוש</Label>
+        <Label htmlFor="searchTerm">חיפוש</Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
+            id="searchTerm"
             placeholder="חיפוש מוצרים..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -65,9 +66,9 @@ const ProductFilterSection: React.FC<ProductFilterSectionProps> = ({
 
       {/* Category Filter */}
       <div className="space-y-2">
-        <Label>קטגוריה</Label>
+        <Label htmlFor="categoryFilter">קטגוריה</Label>
         <Select value={categoryFilter} onValueChange={onCategoryFilter}>
-          <SelectTrigger>
+          <SelectTrigger id="categoryFilter" aria-label="קטגוריה">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -83,43 +84,33 @@ const ProductFilterSection: React.FC<ProductFilterSectionProps> = ({
 
       {/* Visibility Filter */}
       <div className="space-y-2">
-        <Label>נראות</Label>
+        <Label htmlFor="visibilityFilter">נראות</Label>
         <Select value={visibilityFilter} onValueChange={onVisibilityFilter}>
-          <SelectTrigger>
+          <SelectTrigger id="visibilityFilter" aria-label="נראות">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">הכל</SelectItem>
-            <SelectItem value="visible">נראה</SelectItem>
-            <SelectItem value="hidden">מוסתר</SelectItem>
+            <SelectItem value="all">כל המוצרים</SelectItem>
+            <SelectItem value="visible">נראים</SelectItem>
+            <SelectItem value="hidden">מוסתרים</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Sort Options */}
       <div className="space-y-2">
-        <Label>מיון לפי</Label>
-        <div className="space-y-2">
-          {[
-            { value: "order", label: "סדר" },
-            { value: "name", label: "שם" },
-            { value: "price", label: "מחיר" },
-            { value: "category", label: "קטגוריה" },
-          ].map((sortOption) => (
-            <Button
-              key={sortOption.value}
-              variant={sortBy === sortOption.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => onSort(sortOption.value)}
-              className="w-full justify-between"
-            >
-              {sortOption.label}
-              {sortBy === sortOption.value && (
-                <ArrowUpDown className="w-3 h-3" />
-              )}
-            </Button>
-          ))}
-        </div>
+        <Label htmlFor="sortBy">מיון לפי</Label>
+        <Select value={sortBy} onValueChange={onSort}>
+          <SelectTrigger id="sortBy" aria-label="מיון לפי">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="order">סדר ברירת מחדל</SelectItem>
+            <SelectItem value="name">שם</SelectItem>
+            <SelectItem value="price">מחיר</SelectItem>
+            <SelectItem value="category">קטגוריה</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Clear Filters */}
@@ -129,7 +120,7 @@ const ProductFilterSection: React.FC<ProductFilterSectionProps> = ({
 
       {/* Results Count */}
       <div className="text-sm text-muted-foreground pt-2 border-t">
-        מציג {resultsCount} מתוך {totalCount} מוצרים
+        {resultsCount} מתוך {totalCount} תוצאות
       </div>
     </CardContent>
   </Card>

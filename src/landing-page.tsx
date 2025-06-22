@@ -7,19 +7,8 @@ import FloatingOfficeButton from "@/components/floating-office-button";
 import Hero from "./components/hero";
 import Footer from "./components/footer";
 import { ServicesCarousel } from "./components/services-carousel";
-import { useEffect } from "react";
 
 export default function LandingPageV2() {
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src =
-      "https://cdn.enable.co.il/licenses/enable-L442874n0dgk968i-0625-71622/init.js";
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
   return (
     <>
       <Hero />

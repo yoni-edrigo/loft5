@@ -177,13 +177,10 @@ export function ServicesCarousel() {
         <div
           className="flex justify-center mt-8 gap-2"
           role="tablist"
-          aria-label="בחירת שירות"
+          aria-label="צפייה בשירות"
         >
           {isMobile && (
-            <nav
-              className="flex items-center gap-4 shrink-0"
-              aria-label="החלפת שירותים"
-            >
+            <>
               <button
                 className="h-7 w-7 bg-primary p-0 flex items-center justify-center text-lg text-primary-foreground transition-colors hover:bg-primary/80 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={shiftRight}
@@ -245,7 +242,7 @@ export function ServicesCarousel() {
                   />
                 </svg>
               </button>
-            </nav>
+            </>
           )}
         </div>
       </div>

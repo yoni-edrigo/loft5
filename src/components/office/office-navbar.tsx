@@ -75,6 +75,9 @@ export function OfficeNavbar() {
                 className="group size-8 md:hidden"
                 variant="ghost"
                 size="icon"
+                aria-label="פתח תפריט ניווט"
+                aria-expanded="false"
+                aria-controls="mobile-navigation-menu"
               >
                 <svg
                   className="pointer-events-none"
@@ -87,6 +90,7 @@ export function OfficeNavbar() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
                 >
                   <path
                     d="M4 12L20 12"
@@ -101,9 +105,14 @@ export function OfficeNavbar() {
                     className="origin-center translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[135deg]"
                   />
                 </svg>
+                <span className="sr-only">פתח תפריט ניווט</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-64 p-4 md:hidden">
+            <SheetContent
+              side="right"
+              className="w-64 p-4 md:hidden"
+              id="mobile-navigation-menu"
+            >
               <div className="mb-4">
                 <Link to="/" className="flex items-center gap-2">
                   <img

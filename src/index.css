@@ -167,7 +167,9 @@
     ); /* ~ HSL 215.4 16.3% 35% (darker gray for better contrast) */
     --accent: oklch(96% 0.02 210); /* ~ HSL 210 40% 96.1% */
     --accent-foreground: oklch(30% 0.05 222.2); /* ~ HSL 222.2 47.4% 11.2% */
-    --destructive: oklch(70% 0.2 0); /* ~ HSL 0 84.2% 60.2% (red) */
+    --destructive: oklch(
+      55% 0.25 25
+    ); /* ~ HSL 25 85% 45% (lighter red for dark mode with better contrast) */
     --destructive-foreground: oklch(98% 0.02 210); /* ~ HSL 210 40% 98% */
     --border: oklch(92% 0.03 214.3); /* ~ HSL 214.3 31.8% 91.4% (light gray) */
     --input: oklch(92% 0.03 214.3); /* ~ HSL 214.3 31.8% 91.4% */

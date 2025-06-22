@@ -6,7 +6,9 @@
 - main:
   - link "חזרה לעמוד הבית":
     - /url: /
-    - button "חזרה לעמוד הבית"
+    - button "חזרה לעמוד הבית":
+      - img
+      - text: חזרה לעמוד הבית
   - heading "תקנון אתר" [level=1]
   - paragraph: תקנון שימוש באתר לופט 5
   - heading "1. כללי" [level=2]
@@ -41,7 +43,7 @@
   - paragraph: "לשאלות או הבהרות בנוגע לתקנון זה, ניתן לפנות אלינו:"
   - paragraph:
     - strong: "טלפון:"
-    - text: 03-1234567
+    - text: 052-440-0382
   - paragraph:
     - strong: "אימייל:"
     - text: info@loft5.co.il
