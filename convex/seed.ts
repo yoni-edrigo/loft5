@@ -1,6 +1,5 @@
 import { mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
-import { api } from "./_generated/api";
 
 export const seedDatabase = mutation({
   args: {},

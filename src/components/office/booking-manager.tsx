@@ -105,7 +105,6 @@ const SwipeableBookingCard = ({
     ],
   );
 
-  const isAfternoon = booking.timeSlot === "afternoon";
   const isApproved = !!booking.approvedAt;
   const isDeclined = !!booking.declinedAt;
   const isPending = !isApproved && !isDeclined;
@@ -157,7 +156,7 @@ const SwipeableBookingCard = ({
         </div>
         <div className="flex flex-wrap gap-2 text-xs w-full mt-1">
           <Badge variant="outline" className="truncate max-w-[80px] px-2 py-1">
-            {isAfternoon ? "צהריים" : "ערב"}
+            {booking.timeSlot === "afternoon" ? "צהריים" : "ערב"}
           </Badge>
           <Badge
             variant={
@@ -391,7 +390,6 @@ export function BookingManager({
                     </TableRow>
                   ) : (
                     filteredBookings.map((booking) => {
-                      const isAfternoon = booking.timeSlot === "afternoon";
                       const isApproved = !!booking.approvedAt;
                       const isDeclined = !!booking.declinedAt;
 

@@ -13,7 +13,6 @@ describe("Server-Side Booking Logic", () => {
     extraHour: Id<"products">;
   };
   let adminIdentity: { tokenIdentifier: string; [key: string]: any };
-  let adminId: Id<"users">;
 
   beforeEach(async () => {
     t = convexTest(schema);
@@ -85,10 +84,6 @@ describe("Server-Side Booking Logic", () => {
       name: "Admin User",
       email: "admin@test.com",
     };
-    adminId = await t.run(
-      async (ctx) =>
-        await ctx.db.insert("users", { ...adminIdentity, roles: ["ADMIN"] }),
-    );
   });
 
   describe("createBooking Mutation", () => {
