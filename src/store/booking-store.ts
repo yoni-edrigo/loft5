@@ -255,11 +255,6 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
         }
       }
 
-      // Add extra hours if any
-      if (extraHours > 0) {
-        total += extraHours * pricing.extraHourPerPerson * numberOfParticipants;
-      }
-
       // Ensure minimum price for evening
       total = Math.max(total, pricing.minimumPrice);
     }

@@ -2,9 +2,13 @@ import "@testing-library/jest-dom";
 import { expect, afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
+import { toHaveNoViolations } from "jest-axe";
 
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
+
+// Extend expect with jest-axe matchers
+expect.extend(toHaveNoViolations);
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
