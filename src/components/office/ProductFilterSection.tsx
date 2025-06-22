@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Filter, Search, ArrowUpDown } from "lucide-react";
+import { Filter, Search } from "lucide-react";
 
 interface ProductFilterSectionProps {
   searchTerm: string;
