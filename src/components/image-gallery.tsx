@@ -99,7 +99,8 @@ export default function ImageGallery() {
                 src={src || "/placeholder.svg"}
                 alt={
                   (galleryImages && galleryImages[index]?.alt) ||
-                  GALLERY_IMAGES[index]?.alt
+                  GALLERY_IMAGES[index]?.alt ||
+                  "תמונה מהלופט"
                 }
                 className="w-full h-full object-cover"
               />
