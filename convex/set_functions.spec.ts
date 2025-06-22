@@ -20,7 +20,7 @@ describe("Server-Side Booking Logic", () => {
     // Seed products
     products = {
       loftPerPerson: await t.run(
-        async (ctx) =>
+        async (ctx: any) =>
           await ctx.db.insert("products", {
             nameHe: "מחיר לופט לאדם",
             price: 150,
@@ -32,7 +32,7 @@ describe("Server-Side Booking Logic", () => {
           }),
       ),
       minimumPrice: await t.run(
-        async (ctx) =>
+        async (ctx: any) =>
           await ctx.db.insert("products", {
             nameHe: "מחיר מינימום",
             price: 2500,
@@ -44,7 +44,7 @@ describe("Server-Side Booking Logic", () => {
           }),
       ),
       karaoke: await t.run(
-        async (ctx) =>
+        async (ctx: any) =>
           await ctx.db.insert("products", {
             nameHe: "קריוקי",
             price: 500,
@@ -56,7 +56,7 @@ describe("Server-Side Booking Logic", () => {
           }),
       ),
       extraHour: await t.run(
-        async (ctx) =>
+        async (ctx: any) =>
           await ctx.db.insert("products", {
             nameHe: "שעה נוספת",
             price: 300,
@@ -71,7 +71,7 @@ describe("Server-Side Booking Logic", () => {
 
     // Seed availability
     await t.run(
-      async (ctx) =>
+      async (ctx: any) =>
         await ctx.db.insert("availability", {
           date: "2025-12-25",
           timeSlots: [{ slot: "afternoon" }, { slot: "evening" }],
@@ -113,17 +113,19 @@ describe("Server-Side Booking Logic", () => {
       );
       expect(bookingId).toBeDefined();
 
-      const booking = await t.run(async (ctx) => await ctx.db.get(bookingId));
+      const booking = await t.run(
+        async (ctx: any) => await ctx.db.get(bookingId),
+      );
       expect(booking).not.toBeNull();
       expect(booking?.customerName).toBe("John Doe");
       expect(booking?.totalPrice).toBe(3500);
 
       // Verify slot is NOT marked as booked yet
       const availability = await t.run(
-        async (ctx) =>
+        async (ctx: any) =>
           await ctx.db
             .query("availability")
-            .filter((q) => q.eq(q.field("date"), "2025-12-25"))
+            .filter((q: any) => q.eq(q.field("date"), "2025-12-25"))
             .first(),
       );
       const eveningSlot = availability?.timeSlots.find(
@@ -173,16 +175,16 @@ describe("Server-Side Booking Logic", () => {
       ).resolves.not.toThrow();
 
       const booking = await t.run(
-        async (ctx) => await ctx.db.get(pendingBookingId),
+        async (ctx: any) => await ctx.db.get(pendingBookingId),
       );
       expect(booking?.approvedAt).toBeDefined();
 
       // Verify slot IS marked as booked now
       const availability = await t.run(
-        async (ctx) =>
+        async (ctx: any) =>
           await ctx.db
             .query("availability")
-            .filter((q) => q.eq(q.field("date"), "2025-12-25"))
+            .filter((q: any) => q.eq(q.field("date"), "2025-12-25"))
             .first(),
       );
       const eveningSlot = availability?.timeSlots.find(
