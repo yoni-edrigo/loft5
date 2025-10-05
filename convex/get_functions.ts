@@ -82,7 +82,15 @@ export const getAvailability = query({
       .withIndex("by_date", (q) => q.eq("date", args.date))
       .first();
 
-    return availability?.timeSlots || [];
+    // If no record exists, return default available slots
+    if (!availability) {
+      return [
+        { slot: "afternoon" as const },
+        { slot: "evening" as const }
+      ];
+    }
+
+    return availability.timeSlots;
   },
 });
 
@@ -104,12 +112,43 @@ export const getAvailableDates = query({
       )
       .collect();
 
-    return availabilityRecords
-      .filter((record) => record.timeSlots.some((slot) => !slot.bookingId))
-      .map((record) => ({
-        date: record.date,
-        availableSlots: record.timeSlots.filter((slot) => !slot.bookingId),
-      }));
+    // Create a map of existing records by date
+    const existingRecords = new Map();
+    for (const record of availabilityRecords) {
+      existingRecords.set(record.date, record);
+    }
+
+    // Generate all dates in the range
+    const result = [];
+    const start = new Date(args.startDate);
+    const end = new Date(args.endDate);
+    
+    for (let current = new Date(start); current <= end; current.setDate(current.getDate() + 1)) {
+      const dateString = current.toISOString().split('T')[0];
+      
+      const existingRecord = existingRecords.get(dateString);
+      if (existingRecord) {
+        // Use existing record if it has available slots
+        const availableSlots = existingRecord.timeSlots.filter((slot: any) => !slot.bookingId);
+        if (availableSlots.length > 0) {
+          result.push({
+            date: dateString,
+            availableSlots,
+          });
+        }
+      } else {
+        // Default availability for dates without records
+        result.push({
+          date: dateString,
+          availableSlots: [
+            { slot: "afternoon" as const },
+            { slot: "evening" as const }
+          ],
+        });
+      }
+    }
+
+    return result;
   },
 });
 

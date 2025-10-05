@@ -5,6 +5,25 @@ import { internal } from "./_generated/api";
 
 // ============ MUTATIONS ============
 
+// Helper function to ensure availability record exists for a date
+const ensureAvailability = async (ctx: any, date: string) => {
+  const existing = await ctx.db
+    .query("availability")
+    .withIndex("by_date", (q: any) => q.eq("date", date))
+    .first();
+  
+  if (!existing) {
+    return await ctx.db.insert("availability", {
+      date,
+      timeSlots: [
+        { slot: "afternoon" as const },
+        { slot: "evening" as const }
+      ]
+    });
+  }
+  return existing._id;
+};
+
 // Helper function to validate client-calculated price using products
 const validatePrice = async (ctx: any, args: any, calculatedPrice: number) => {
   let expectedPrice = 0;
@@ -139,8 +158,8 @@ export const createBooking = mutation({
     console.log("=== createBooking called ===");
     console.log("Received args:", JSON.stringify(args, null, 2));
 
-    // Check availability
-    const availability = await ctx.db
+    // Check availability - ensure availability record exists
+    let availability = await ctx.db
       .query("availability")
       .withIndex("by_date", (q) => q.eq("date", args.eventDate))
       .first();
@@ -148,9 +167,16 @@ export const createBooking = mutation({
     console.log("Availability query result:", availability);
 
     if (!availability) {
-      console.log("ERROR: Date not available for:", args.eventDate);
-      throw new Error("Date not available");
+      console.log("No availability record found, creating default availability for:", args.eventDate);
+      const availabilityId = await ensureAvailability(ctx, args.eventDate);
+      availability = await ctx.db.get(availabilityId) as any;
+      console.log("Created availability record:", availability);
     }
+    
+    if (!availability) {
+      throw new Error("Failed to create or retrieve availability record");
+    }
+    
     const timeSlotAvailable = availability.timeSlots.find(
       (slot) => slot.slot === args.timeSlot && !slot.bookingId,
     );
@@ -429,20 +455,28 @@ export const approveBooking = mutation({
     });
 
     // NOW mark the time slot as booked by linking it to the approved booking
-    const availability = await ctx.db
+    let availability = await ctx.db
       .query("availability")
       .withIndex("by_date", (q) => q.eq("date", booking.eventDate))
       .first();
 
-    if (availability) {
-      await ctx.db.patch(availability._id, {
-        timeSlots: availability.timeSlots.map((slot) =>
-          slot.slot === booking.timeSlot
-            ? { ...slot, bookingId: args.id }
-            : slot,
-        ),
-      });
+    if (!availability) {
+      // Ensure availability record exists
+      const availabilityId = await ensureAvailability(ctx, booking.eventDate);
+      availability = await ctx.db.get(availabilityId) as any;
     }
+
+    if (!availability) {
+      throw new Error("Failed to create or retrieve availability record");
+    }
+
+    await ctx.db.patch(availability._id, {
+      timeSlots: availability.timeSlots.map((slot) =>
+        slot.slot === booking.timeSlot
+          ? { ...slot, bookingId: args.id }
+          : slot,
+      ),
+    });
 
     return { success: true };
   },
